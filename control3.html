@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IoT-Enabled Automatic Organic Composting Machine</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mqtt/dist/mqtt.min.js"></script>
+
+<style>
+:root {
+    --bg: #f0f2f5;
+    --surface: #ffffff;
+    --surface-alt: #f8f9fb;
+    --border: rgba(0,0,0,0.06);
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --text-muted: #9ca3af;
+    --green: #22c55e;
+    --green-dark: #16a34a;
+    --green-soft: #dcfce7;
+    --blue: #3b82f6;
+    --blue-soft: #dbeafe;
+    --red: #ef4444;
+    --red-soft: #fee2e2;
+    --amber: #f59e0b;
+    --amber-soft: #fef3c7;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.07), 0 2px 6px rgba(0,0,0,0.04);
+    --shadow-lg: 0 12px 40px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+    --radius-sm: 10px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding-bottom: 60px;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0; opacity: 0.5;
+}
+
+/* ─── Header ─── */
+.header { padding: 48px 40px 28px; text-align: center; position: relative; z-index: 1; }
+.header-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--green-soft); color: var(--green-dark);
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 5px 12px; border-radius: 999px; margin-bottom: 16px;
+}
+.header-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse-dot 2s infinite; }
+@keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.7)} }
+.header h1 { margin: 0 0 8px; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
+.header p  { color: var(--text-secondary); margin: 0; font-size: 14px; }
+
+/* ─── WiFi Card ─── */
+.wifi-card {
+    display: inline-flex; align-items: center; gap: 12px;
+    margin: 20px auto 0; padding: 10px 20px 10px 14px;
+    border-radius: 999px; background: var(--surface);
+    box-shadow: var(--shadow-sm); border: 1px solid var(--border);
+}
+.wifi-icon-box { width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background .4s;flex-shrink:0; }
+.wifi-icon-box.connected    { background: var(--green-soft); }
+.wifi-icon-box.disconnected { background: var(--red-soft); }
+.wifi-emoji  { font-size:17px;line-height:1; }
+.card-emoji  { font-size:26px;line-height:1;display:block; }
+.wifi-label  { font-size:12px;color:var(--text-secondary);font-weight:500; }
+.wifi-status { font-size:13px;font-weight:600;transition:color .3s; }
+.wifi-status.connected    { color: var(--green); }
+.wifi-status.disconnected { color: var(--red); }
+
+/* ─── Sensor grid ─── */
+.container {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px; padding: 24px 40px 0;
+    position: relative; z-index: 1;
+    max-width: 1100px; margin: 0 auto;
+}
+.card {
+    background: var(--surface); border-radius: var(--radius-lg);
+    padding: 28px 32px; box-shadow: var(--shadow-md);
+    border: 1px solid var(--border); position: relative; overflow: hidden;
+    transition: box-shadow .3s, transform .3s;
+}
+.card:hover { box-shadow:var(--shadow-lg); transform:translateY(-2px); }
+.card::after {
+    content:''; position:absolute; top:-40px;right:-40px;
+    width:130px;height:130px;border-radius:50%;opacity:.06;pointer-events:none;
+}
+.card-moisture::after { background:var(--blue); }
+.card-temp::after     { background:var(--green); }
+.card-ph::after       { background:var(--amber); }
+
+.title-row { display:flex;align-items:center;gap:14px; }
+.icon-box  { width:52px;height:52px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+.icon-moisture { background:#eff6ff; }
+.icon-temp     { background:#f0fdf4; }
+.icon-ph       { background:var(--amber-soft); }
+.card-title { font-size:15px;font-weight:700; }
+.subtitle   { font-size:12px;color:var(--text-muted);margin-top:2px;font-family:'Space Mono',monospace;letter-spacing:.03em; }
+.big-value  { font-size:72px;font-weight:800;margin:22px 0 8px;letter-spacing:-.03em;line-height:1; }
+.big-value-blue  { color:#2563eb; }
+.big-value-green { color:#16a34a; }
+.big-value-amber { color:#b45309; }
+.unit { font-size:22px;color:var(--text-muted);font-weight:400;margin-left:4px; }
+.scale-wrapper { margin-top:18px; }
+.scale-labels { display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text-muted);margin-bottom:8px;font-family:'Space Mono',monospace; }
+.scale-hint   { font-size:11px;color:var(--text-secondary);text-align:center;font-family:'DM Sans',sans-serif;flex:1;padding:0 8px; }
+.progress      { height:8px;background:var(--surface-alt);border-radius:999px;overflow:hidden;border:1px solid var(--border); }
+.progress-fill { height:100%;width:0%;transition:width .6s cubic-bezier(.34,1.56,.64,1);border-radius:999px; }
+.fill-blue  { background:linear-gradient(to right,#93c5fd,#2563eb); }
+.fill-green { background:linear-gradient(to right,#86efac,#16a34a); }
+.fill-amber { background:linear-gradient(to right,#fde68a,#f59e0b); }
+
+/* ─── Section divider ─── */
+.section-divider { padding:32px 40px 8px;max-width:1100px;margin:0 auto;position:relative;z-index:1; }
+.section-label {
+    display:flex;align-items:center;gap:10px;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);
+}
+.section-label::after { content:'';flex:1;height:1px;background:var(--border); }
+
+/* ─── Control card ─── */
+.control-container { padding:12px 40px 0;max-width:1100px;margin:0 auto;position:relative;z-index:1; }
+.control-card { background:var(--surface);border-radius:var(--radius-lg);padding:30px 32px;box-shadow:var(--shadow-md);border:1px solid var(--border); }
+.control-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:24px; }
+.control-title-row { display:flex;align-items:center;gap:12px; }
+.control-icon {
+    width:48px;height:48px;border-radius:var(--radius-sm);
+    background:linear-gradient(135deg,#a78bfa,#7c3aed);
+    display:flex;align-items:center;justify-content:center;
+}
+.control-title { font-size:16px;font-weight:600; }
+.control-sub   { font-size:12px;color:var(--text-muted);font-family:'Space Mono',monospace;margin-top:2px; }
+
+/* ─── Mode toggle ─── */
+.mode-toggle { display:flex;background:var(--surface-alt);border:1px solid var(--border);border-radius:999px;padding:4px;gap:4px; }
+.mode-btn { padding:8px 22px;border-radius:999px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;transition:all .25s;background:transparent;color:var(--text-secondary); }
+.mode-btn.active-manual { background:var(--text-primary);color:white;box-shadow:var(--shadow-sm); }
+.mode-btn.active-auto   { background:linear-gradient(135deg,#6d28d9,#7c3aed);color:white;box-shadow:0 4px 12px rgba(124,58,237,.3); }
+
+/* ─── Manual Controls grid: position-card(2col) + mix + solenoid = 4 col ─── */
+.manual-controls { display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px; }
+
+/* ── Regular ctrl-btn (Mix / Solenoid) ── */
+.ctrl-btn {
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+    padding:24px 16px;border-radius:var(--radius-md);border:1.5px solid var(--border);
+    background:var(--surface-alt);cursor:pointer;font-family:'DM Sans',sans-serif;
+    transition:all .2s;position:relative;overflow:hidden;touch-action:manipulation;
+}
+.ctrl-btn::before { content:'';position:absolute;inset:0;opacity:0;transition:opacity .2s;border-radius:var(--radius-md); }
+.ctrl-btn:hover  { transform:translateY(-2px);box-shadow:var(--shadow-md); }
+.ctrl-btn:active { transform:scale(.97); }
+
+.btn-mix      { border-color:rgba(34,197,94,.25); }
+.btn-mix::before { background:linear-gradient(135deg,#f0fdf4,#dcfce7); }
+.btn-mix:hover::before { opacity:1; }
+.btn-mix.on   { background:linear-gradient(135deg,#dcfce7,#bbf7d0);border-color:var(--green);box-shadow:0 0 0 3px rgba(34,197,94,.12); }
+
+.btn-solenoid { border-color:rgba(59,130,246,.25); }
+.btn-solenoid::before { background:linear-gradient(135deg,#eff6ff,#dbeafe); }
+.btn-solenoid:hover::before { opacity:1; }
+.btn-solenoid.on { background:linear-gradient(135deg,#dbeafe,#bfdbfe);border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.12); }
+
+.ctrl-icon { width:44px;height:44px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;transition:background .2s; }
+.btn-mix .ctrl-icon         { background:rgba(34,197,94,.12); }
+.btn-mix.on .ctrl-icon      { background:var(--green); }
+.btn-solenoid .ctrl-icon    { background:rgba(59,130,246,.12); }
+.btn-solenoid.on .ctrl-icon { background:var(--blue); }
+.ctrl-icon svg { width:22px;height:22px;transition:stroke .2s; }
+.ctrl-btn .ctrl-icon svg    { stroke:var(--text-secondary);fill:none; }
+.ctrl-btn.on .ctrl-icon svg { stroke:white; }
+.ctrl-label { font-size:14px;font-weight:600;color:var(--text-primary); }
+.ctrl-state { font-size:11px;font-family:'Space Mono',monospace;font-weight:700;letter-spacing:.06em;padding:3px 10px;border-radius:999px;transition:all .2s; }
+.ctrl-state.off { background:var(--surface-alt);color:var(--text-muted);border:1px solid var(--border); }
+.btn-mix.on .ctrl-state      { background:var(--green);color:white;border:1px solid transparent; }
+.btn-solenoid.on .ctrl-state { background:var(--blue);color:white;border:1px solid transparent; }
+
+/* ════════════════════════════════
+   POSITION CARD (spans 2 columns)
+   ════════════════════════════════ */
+.position-card {
+    grid-column: span 2;
+    background: var(--surface-alt);
+    border: 1.5px solid rgba(245,158,11,.25);
+    border-radius: var(--radius-md);
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.position-header { display:flex;align-items:center;gap:12px; }
+.position-icon-box {
+    width:44px;height:44px;border-radius:var(--radius-sm);
+    background:rgba(245,158,11,.12);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.position-title { font-size:14px;font-weight:700; }
+.position-hint  { font-size:11px;color:var(--text-muted);font-family:'Space Mono',monospace;margin-top:2px; }
+
+/* live badge */
+.lid-state-badge {
+    margin-left:auto;
+    font-size:11px;font-weight:700;font-family:'Space Mono',monospace;letter-spacing:.06em;
+    padding:4px 12px;border-radius:999px;
+    background:var(--amber-soft);color:var(--amber);
+    border:1px solid rgba(245,158,11,.3);
+    transition:all .3s;white-space:nowrap;
+}
+.lid-state-badge.open { background:var(--green-soft);color:var(--green-dark);border-color:rgba(34,197,94,.3); }
+
+/* ── UP / DOWN buttons ── */
+.position-btns { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
+
+.hold-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 18px 20px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    transition: all .15s ease;
+    touch-action: none;
+    position: relative;
+    overflow: hidden;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* colour fill overlay while holding */
+.hold-btn::after {
+    content: '';
+    position: absolute; inset: 0;
+    opacity: 0; transition: opacity .15s;
+    border-radius: calc(var(--radius-sm) - 2px);
+}
+.btn-up::after   { background: linear-gradient(135deg,#f0fdf4,#dcfce7); }
+.btn-down::after { background: linear-gradient(135deg,#fffbeb,#fef3c7); }
+
+.btn-up   { border-color:rgba(34,197,94,.3); }
+.btn-down { border-color:rgba(245,158,11,.3); }
+
+/* holding state */
+.hold-btn.holding { transform:scale(.97); }
+.hold-btn.holding::after { opacity:1; }
+.btn-up.holding   { border-color:var(--green);box-shadow:0 0 0 3px rgba(34,197,94,.15); }
+.btn-down.holding { border-color:var(--amber);box-shadow:0 0 0 3px rgba(245,158,11,.15); }
+
+/* icon circle */
+.hold-btn-icon {
+    width:36px;height:36px;border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    transition:background .15s, transform .15s;
+    position:relative;z-index:1;flex-shrink:0;
+}
+.btn-up   .hold-btn-icon { background:rgba(34,197,94,.1); }
+.btn-down .hold-btn-icon { background:rgba(245,158,11,.1); }
+.btn-up.holding   .hold-btn-icon { background:var(--green);transform:translateY(-3px); }
+.btn-down.holding .hold-btn-icon { background:var(--amber);transform:translateY(3px); }
+
+.hold-btn-icon svg { width:20px;height:20px;stroke-width:2.5;transition:stroke .15s; }
+.btn-up   .hold-btn-icon svg { stroke:var(--green-dark); }
+.btn-down .hold-btn-icon svg { stroke:#92400e; }
+.btn-up.holding   .hold-btn-icon svg { stroke:white; }
+.btn-down.holding .hold-btn-icon svg { stroke:white; }
+
+.hold-btn-text { position:relative;z-index:1;text-align:left; }
+.hold-label { display:block;font-size:14px;font-weight:700;transition:color .15s; }
+.btn-up .hold-label   { color:var(--green-dark); }
+.btn-down .hold-label { color:#92400e; }
+.hold-sub {
+    display:block;font-size:10px;font-weight:400;
+    color:var(--text-muted);font-family:'Space Mono',monospace;margin-top:2px;
+    transition:color .15s;
+}
+.btn-up.holding   .hold-label { color:var(--green-dark); }
+.btn-down.holding .hold-label { color:#92400e; }
+
+/* ─── Auto Banner ─── */
+.auto-banner {
+    display:none;align-items:center;justify-content:center;gap:16px;
+    padding:28px;background:linear-gradient(135deg,#f5f3ff,#ede9fe);
+    border:1.5px solid rgba(124,58,237,.2);border-radius:var(--radius-md);
+    animation:fade-in .35s ease;
+}
+.auto-banner.visible { display:flex; }
+@keyframes fade-in { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+.auto-spinner { width:40px;height:40px;border-radius:50%;border:3px solid rgba(124,58,237,.2);border-top-color:#7c3aed;animation:spin 1s linear infinite;flex-shrink:0; }
+@keyframes spin { to{transform:rotate(360deg)} }
+.auto-text h3 { margin:0 0 4px;font-size:16px;font-weight:700;color:#5b21b6; }
+.auto-text p  { margin:0;font-size:13px;color:#7c3aed;opacity:.8; }
+
+/* ═══ RESPONSIVE ═══ */
+@media (min-width:1024px) {
+    .container { max-width:1100px;gap:24px; }
+    .big-value  { font-size:80px; }
+    .card { padding:32px 36px; }
+}
+@media (min-width:768px) and (max-width:1023px) {
+    .header { padding:36px 28px 22px; }
+    .header h1 { font-size:22px; }
+    .container { gap:16px;padding:20px 28px 0; }
+    .card { padding:22px 24px; }
+    .big-value { font-size:60px; }
+    .section-divider { padding:24px 28px 8px; }
+    .control-container { padding:10px 28px 0; }
+    .manual-controls { grid-template-columns:1fr 1fr 1fr 1fr;gap:12px; }
+}
+@media (max-width:767px) {
+    .header { padding:28px 16px 18px; }
+    .header h1 { font-size:18px;line-height:1.3; }
+    .header p  { font-size:12px; }
+    .header-badge { font-size:10px;padding:4px 10px; }
+    .wifi-card { padding:8px 14px 8px 10px;gap:8px; }
+    .wifi-icon-box { width:28px;height:28px; }
+    .container { grid-template-columns:1fr;gap:12px;padding:16px 16px 0; }
+    .card { padding:20px; }
+    .big-value { font-size:64px; }
+    .section-divider { padding:20px 16px 8px; }
+    .control-container { padding:10px 16px 0; }
+    .control-card { padding:20px 18px; }
+    .control-header { flex-direction:column;align-items:flex-start;gap:14px; }
+    .mode-toggle { width:100%; }
+    .mode-btn { flex:1;text-align:center;padding:8px 12px;font-size:12px; }
+    /* 2-col grid: position-card(full width) + mix + solenoid */
+    .manual-controls { grid-template-columns:1fr 1fr;gap:10px; }
+    .position-card   { grid-column:span 2; }
+    .ctrl-btn { padding:16px 8px;gap:8px; }
+    .ctrl-icon { width:36px;height:36px; }
+    .ctrl-icon svg { width:18px;height:18px; }
+    .ctrl-label { font-size:12px; }
+    .ctrl-state { font-size:10px;padding:2px 8px; }
+    .auto-banner { padding:20px 16px;gap:12px;flex-direction:column;text-align:center; }
+}
+@media (max-width:380px) {
+    .big-value { font-size:52px; }
+    .manual-controls { grid-template-columns:1fr; }
+    .position-card { grid-column:span 1; }
+}
+</style>
+</head>
+
+<body>
+
+<!-- ════ HEADER ════ -->
+<div class="header">
+    <div class="header-badge">
+        <span class="dot"></span>
+        Real-Time Monitoring
+    </div>
+    <h1>IoT-Enabled Automatic<br>Organic Composting Machine</h1>
+    <p>IoT-Based Real-Time Monitoring &amp; Control System</p>
+    <div class="wifi-card">
+        <div class="wifi-icon-box disconnected" id="wifiBox"><span class="wifi-emoji">📡</span></div>
+        <span class="wifi-label">ESP32</span>
+        <div id="status" class="wifi-status disconnected">Disconnected</div>
+    </div>
+</div>
+
+<!-- ════ SENSOR CARDS ════ -->
+<div class="container">
+    <div class="card card-moisture">
+        <div class="title-row">
+            <div class="icon-box icon-moisture"><span class="card-emoji">💧</span></div>
+            <div>
+                <div class="card-title">ความชื้น</div>
+                <div class="subtitle">SOIL MOISTURE</div>
+            </div>
+        </div>
+        <div><span class="big-value big-value-blue" id="mois">--</span><span class="unit">%</span></div>
+        <div class="scale-wrapper">
+            <div class="scale-labels">
+                <span>0%</span>
+                <span class="scale-hint">ความชื้นที่เหมาะสม 50 – 60 %</span>
+                <span>100%</span>
+            </div>
+            <div class="progress"><div class="progress-fill fill-blue" id="moisBar"></div></div>
+        </div>
+    </div>
+    <div class="card card-temp">
+        <div class="title-row">
+            <div class="icon-box icon-temp"><span class="card-emoji">🌡️</span></div>
+            <div>
+                <div class="card-title">อุณหภูมิ</div>
+                <div class="subtitle">TEMPERATURE</div>
+            </div>
+        </div>
+        <div><span class="big-value big-value-green" id="temp">--</span><span class="unit">°C</span></div>
+        <div class="scale-wrapper">
+            <div class="scale-labels">
+                <span>0°C</span>
+                <span class="scale-hint">อุณหภูมิที่เหมาะสม 40 – 60 °C</span>
+                <span>100°C</span>
+            </div>
+            <div class="progress"><div class="progress-fill fill-green" id="tempBar"></div></div>
+        </div>
+    </div>
+    <div class="card card-ph">
+        <div class="title-row">
+            <div class="icon-box icon-ph"><span class="card-emoji">🧪</span></div>
+            <div>
+                <div class="card-title">ค่า pH</div>
+                <div class="subtitle">SOIL PH</div>
+            </div>
+        </div>
+        <div><span class="big-value big-value-amber" id="ph">--</span></div>
+        <div class="scale-wrapper">
+            <div class="scale-labels">
+                <span>0</span>
+                <span class="scale-hint">pH ที่เหมาะสม 6.0 – 7.5</span>
+                <span>14</span>
+            </div>
+            <div class="progress"><div class="progress-fill fill-amber" id="phBar"></div></div>
+        </div>
+    </div>
+</div>
+
+<!-- ════ CONTROL SECTION ════ -->
+<div class="section-divider"><div class="section-label">Machine Control</div></div>
+
+<div class="control-container">
+    <div class="control-card">
+        <div class="control-header">
+            <div class="control-title-row">
+                <div class="control-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/>
+                        <path d="M15.54 8.46a5 5 0 010 7.07M8.46 8.46a5 5 0 000 7.07"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="control-title">Machine Control</div>
+                    <div class="control-sub">MACHINE CONTROL · NodeMCU ESP32</div>
+                </div>
+            </div>
+            <div class="mode-toggle">
+                <button class="mode-btn active-manual" id="btnManual" onclick="setMode('manual')">Manual</button>
+                <button class="mode-btn" id="btnAuto"   onclick="setMode('auto')">Auto</button>
+            </div>
+        </div>
+
+        <!-- Manual Controls -->
+        <div class="manual-controls" id="manualControls">
+
+            <!-- ══ POSITION CARD (2 cols) ══ -->
+            <div class="position-card">
+                <div class="position-header">
+                    <div class="position-icon-box">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2v20M5 9l7-7 7 7M5 15l7 7 7-7"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="position-title">Position — Lid Control</div>
+                        <div class="position-hint">PRESS &amp; HOLD TO MOVE</div>
+                    </div>
+                    <span class="lid-state-badge" id="lidBadge">DOWN</span>
+                </div>
+
+                <!-- UP / DOWN hold buttons -->
+                <div class="position-btns">
+
+                    <!-- UP -->
+                    <button class="hold-btn btn-up" id="btnUp"
+                        onmousedown="holdStart('up')"    onmouseup="holdEnd('up')"    onmouseleave="holdEnd('up')"
+                        ontouchstart="holdStart('up')"   ontouchend="holdEnd('up')"   ontouchcancel="holdEnd('up')">
+                        <div class="hold-btn-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="18 15 12 9 6 15"/>
+                            </svg>
+                        </div>
+                        <div class="hold-btn-text">
+                            <span class="hold-label">UP</span>
+                        </div>
+                    </button>
+
+                    <!-- DOWN -->
+                    <button class="hold-btn btn-down" id="btnDown"
+                        onmousedown="holdStart('down')"   onmouseup="holdEnd('down')"   onmouseleave="holdEnd('down')"
+                        ontouchstart="holdStart('down')"  ontouchend="holdEnd('down')"  ontouchcancel="holdEnd('down')">
+                        <div class="hold-btn-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"/>
+                            </svg>
+                        </div>
+                        <div class="hold-btn-text">
+                            <span class="hold-label">DOWN</span>
+                        </div>
+                    </button>
+
+                </div>
+            </div><!-- /position-card -->
+
+            <!-- Mix -->
+            <button class="ctrl-btn btn-mix" id="btnMix" onclick="toggleCtrl('mix')">
+                <div class="ctrl-icon">
+                    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2a10 10 0 100 20A10 10 0 0012 2z"/>
+                        <path d="M12 6v6l4 2"/>
+                    </svg>
+                </div>
+                <span class="ctrl-label">Mix</span>
+                <span class="ctrl-state off" id="stateMix">OFF</span>
+            </button>
+
+            <!-- Solenoid -->
+            <button class="ctrl-btn btn-solenoid" id="btnSolenoid" onclick="toggleCtrl('solenoid')">
+                <div class="ctrl-icon">
+                    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2C6 2 2 6 2 12c0 4.5 2.5 8.4 6.2 10.4"/>
+                        <path d="M12 2c6 0 10 4 10 10 0 4.5-2.5 8.4-6.2 10.4"/>
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M12 9v-5M12 20v-5"/>
+                    </svg>
+                </div>
+                <span class="ctrl-label">Solenoid</span>
+                <span class="ctrl-state off" id="stateSolenoid">OFF</span>
+            </button>
+
+        </div><!-- /manual-controls -->
+
+        <!-- Auto Banner -->
+        <div class="auto-banner" id="autoBanner">
+            <div class="auto-spinner"></div>
+            <div class="auto-text">
+                <h3>System is running automatically</h3>
+                <p>The machine is managing all operations on its own — no manual input required.</p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ════ SCRIPT ════ -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    /* ── MQTT ── */
+    const statusEl  = document.getElementById("status");
+    const wifiBox   = document.getElementById("wifiBox");
+    const moisEl    = document.getElementById("mois");
+    const moisBarEl = document.getElementById("moisBar");
+    const tempEl    = document.getElementById("temp");
+    const tempBarEl = document.getElementById("tempBar");
+    const phEl      = document.getElementById("ph");
+    const phBarEl   = document.getElementById("phBar");
+
+    const client = mqtt.connect('wss://broker.hivemq.com:8884/mqtt', {
+        will: { topic: 'esp32/status', payload: 'offline', qos: 1, retain: true }
+    });
+
+    let lastMessageTime = Date.now();
+    const timeoutLimit  = 10000;
+    let statusReady = false;
+    let offlineTimer = null;
+
+    function setConnected() {
+        if (offlineTimer) { clearTimeout(offlineTimer); offlineTimer = null; }
+        statusEl.textContent = "Connected";
+        statusEl.className   = "wifi-status connected";
+        wifiBox.classList.replace("disconnected", "connected");
+    }
+    function setDisconnected() {
+        statusEl.textContent = "Disconnected";
+        statusEl.className   = "wifi-status disconnected";
+        wifiBox.classList.replace("connected", "disconnected");
+    }
+
+    client.on('connect', function () {
+        client.subscribe("esp32/mek_soil_001");
+        client.subscribe("esp32/status");
+        offlineTimer = setTimeout(function () { statusReady = true; }, 4000);
+    });
+
+    client.on('message', function (topic, message) {
+        if (topic === 'esp32/status') {
+            const s = message.toString();
+            if (s === 'online')               { statusReady = true; setConnected(); }
+            if (s === 'offline' && statusReady) setDisconnected();
+            return;
+        }
+        try {
+            const data = JSON.parse(message.toString());
+            if (data.mois !== undefined) { moisEl.textContent = data.mois; moisBarEl.style.width = data.mois + "%"; }
+            if (data.temp !== undefined) { tempEl.textContent = data.temp; tempBarEl.style.width = Math.min(Math.max(data.temp, 0), 100) + "%"; }
+            if (data.ph   !== undefined) { phEl.textContent   = data.ph;   phBarEl.style.width   = Math.min(Math.max((data.ph / 14) * 100, 0), 100) + "%"; }
+            lastMessageTime = Date.now();
+            statusReady = true;
+            setConnected();
+        } catch (e) {}
+    });
+
+    setInterval(function () {
+        if (statusReady && Date.now() - lastMessageTime > timeoutLimit) setDisconnected();
+    }, 2000);
+
+    /* ── Mode ── */
+    window.currentMode = 'manual';
+    window.setMode = function (mode) {
+        window.currentMode = mode;
+        const btnManual  = document.getElementById("btnManual");
+        const btnAuto    = document.getElementById("btnAuto");
+        const manualCtrl = document.getElementById("manualControls");
+        const autoBanner = document.getElementById("autoBanner");
+        if (mode === 'manual') {
+            btnManual.className = "mode-btn active-manual";
+            btnAuto.className   = "mode-btn";
+            manualCtrl.style.display = "grid";
+            autoBanner.classList.remove("visible");
+            client.publish("esp32/control", JSON.stringify({ mode: "manual" }));
+        } else {
+            btnAuto.className   = "mode-btn active-auto";
+            btnManual.className = "mode-btn";
+            manualCtrl.style.display = "none";
+            autoBanner.classList.add("visible");
+            client.publish("esp32/control", JSON.stringify({ mode: "auto" }));
+        }
+    };
+
+    /* ── Toggle (Mix / Solenoid) ── */
+    const states = { mix: false, solenoid: false };
+    window.toggleCtrl = function (name) {
+        states[name] = !states[name];
+        const val = states[name];
+        const btn  = document.getElementById(name === 'mix' ? 'btnMix' : 'btnSolenoid');
+        const stEl = document.getElementById(name === 'mix' ? 'stateMix' : 'stateSolenoid');
+        if (val) { btn.classList.add("on");    stEl.textContent = "ON";  stEl.classList.remove("off"); }
+        else     { btn.classList.remove("on"); stEl.textContent = "OFF"; stEl.classList.add("off"); }
+        const payload = {};
+        payload[name] = val ? 1 : 0;
+        client.publish("esp32/control", JSON.stringify(payload));
+    };
+
+    /* ════════════════════════════════════
+       POSITION — Press & Hold UP / DOWN
+       ════════════════════════════════════ */
+    const lidBadge = document.getElementById("lidBadge");
+    let holdDir = null;
+
+    function updateLidBadge(dir) {
+        if (dir === 'up') {
+            lidBadge.textContent = "MOVING UP";
+            lidBadge.classList.add("open");
+        } else if (dir === 'down') {
+            lidBadge.textContent = "MOVING DOWN";
+            lidBadge.classList.remove("open");
+        } else {
+            const wasUp = lidBadge.classList.contains("open");
+            lidBadge.textContent = wasUp ? "UP" : "DOWN";
+        }
+    }
+
+    window.holdStart = function (dir) {
+        if (holdDir === dir) return;   // already holding this direction
+        // if opposite direction was held, release it first
+        if (holdDir && holdDir !== dir) holdEnd(holdDir);
+
+        holdDir = dir;
+        const btn = document.getElementById(dir === 'up' ? 'btnUp' : 'btnDown');
+        btn.classList.add("holding");
+        updateLidBadge(dir);
+        client.publish("esp32/control", JSON.stringify({ position: dir === 'up' ? 1 : 0 }));
+    };
+
+    window.holdEnd = function (dir) {
+        if (holdDir !== dir) return;
+        holdDir = null;
+        const btn = document.getElementById(dir === 'up' ? 'btnUp' : 'btnDown');
+        btn.classList.remove("holding");
+        updateLidBadge(null);
+        /* position: -1 = STOP signal to ESP32 */
+        client.publish("esp32/control", JSON.stringify({ position: -1 }));
+    };
+
+    /* Block context menu on long-press (mobile) */
+    document.querySelectorAll('.hold-btn').forEach(function (el) {
+        el.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    });
+});
+</script>
+
+</body>
+</html>
