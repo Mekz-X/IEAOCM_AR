@@ -66,22 +66,165 @@ body::before {
 .header h1 { margin: 0 0 8px; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
 .header p  { color: var(--text-secondary); margin: 0; font-size: 14px; }
 
-/* ─── WiFi Card ─── */
+/* ─── WiFi Card (status + settings toggle) ─── */
+.wifi-card-row { display:flex; align-items:center; justify-content:center; gap:10px; margin-top:20px; flex-wrap:wrap; }
 .wifi-card {
     display: inline-flex; align-items: center; gap: 12px;
-    margin: 20px auto 0; padding: 10px 20px 10px 14px;
+    padding: 10px 20px 10px 14px;
     border-radius: 999px; background: var(--surface);
     box-shadow: var(--shadow-sm); border: 1px solid var(--border);
 }
 .wifi-icon-box { width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background .4s;flex-shrink:0; }
 .wifi-icon-box.connected    { background: var(--green-soft); }
 .wifi-icon-box.disconnected { background: var(--red-soft); }
+.wifi-icon-box.reconnecting { background: var(--amber-soft); }
 .wifi-emoji  { font-size:17px;line-height:1; }
 .card-emoji  { font-size:26px;line-height:1;display:block; }
 .wifi-label  { font-size:12px;color:var(--text-secondary);font-weight:500; }
+.wifi-card-text { display:flex; flex-direction:column; line-height:1.3; }
 .wifi-status { font-size:13px;font-weight:600;transition:color .3s; }
 .wifi-status.connected    { color: var(--green); }
 .wifi-status.disconnected { color: var(--red); }
+.wifi-status.reconnecting { color: var(--amber); }
+
+/* gear button to open WiFi settings */
+.wifi-settings-btn {
+    width:44px;height:44px;border-radius:50%;
+    background:var(--surface); border:1px solid var(--border);
+    box-shadow:var(--shadow-sm); cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:all .2s;
+}
+.wifi-settings-btn:hover { transform:rotate(30deg); box-shadow:var(--shadow-md); }
+.wifi-settings-btn svg { width:20px;height:20px;stroke:var(--text-secondary); }
+
+/* ─── WiFi Settings Panel ─── */
+.wifi-settings-wrap { max-width:480px; margin:14px auto 0; padding:0 16px; position:relative; z-index:1; }
+.wifi-settings-card {
+    display:none;
+    background:var(--surface); border-radius:var(--radius-md);
+    border:1px solid var(--border); box-shadow:var(--shadow-md);
+    padding:22px 24px; animation:fade-in .25s ease;
+}
+.wifi-settings-card.visible { display:block; }
+.wifi-settings-title { font-size:14px; font-weight:700; margin-bottom:4px; display:flex; align-items:center; gap:8px; }
+.wifi-settings-sub { font-size:12px; color:var(--text-muted); margin-bottom:16px; }
+.wifi-field { margin-bottom:14px; }
+
+/* ─── ลิสต์ WiFi ที่จำไว้ ─── */
+.wifi-saved-section { margin-bottom:18px; }
+.wifi-saved-title { font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px; }
+.wifi-saved-list { display:flex; flex-direction:column; gap:6px; }
+.wifi-saved-item {
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:9px 12px; border-radius:var(--radius-sm); background:var(--surface-alt);
+    border:1.5px solid var(--border); font-size:13px;
+}
+.wifi-saved-item.active { border-color:var(--green); background:var(--green-soft); }
+.wifi-saved-item-name { display:flex; align-items:center; gap:8px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.wifi-saved-item-name svg { width:15px; height:15px; stroke:var(--text-secondary); flex-shrink:0; }
+.wifi-saved-item.active .wifi-saved-item-name svg { stroke:var(--green-dark); }
+.wifi-saved-item-badge {
+    font-size:10px; font-weight:700; font-family:'Space Mono',monospace; letter-spacing:.04em;
+    padding:2px 8px; border-radius:999px; flex-shrink:0; white-space:nowrap;
+}
+.wifi-saved-item-badge.slot { background:var(--surface); color:var(--text-muted); border:1px solid var(--border); }
+.wifi-saved-item-badge.connected { background:var(--green); color:white; }
+.wifi-saved-empty { padding:12px; text-align:center; font-size:12px; color:var(--text-muted); background:var(--surface-alt); border-radius:var(--radius-sm); }
+.wifi-field label { display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:6px; }
+.wifi-input-row { position:relative; display:flex; align-items:center; }
+.wifi-field input {
+    width:100%; padding:11px 14px; border-radius:var(--radius-sm);
+    border:1.5px solid var(--border); background:var(--surface-alt);
+    font-family:'DM Sans',sans-serif; font-size:14px; color:var(--text-primary);
+    outline:none; transition:border-color .15s;
+}
+.wifi-field input:focus { border-color:var(--blue); }
+.wifi-toggle-eye {
+    position:absolute; right:10px; cursor:pointer; background:none; border:none;
+    color:var(--text-muted); font-size:12px; font-weight:600; padding:4px 6px;
+}
+.wifi-settings-actions { display:flex; gap:10px; margin-top:18px; }
+.wifi-btn {
+    flex:1; padding:11px 14px; border-radius:var(--radius-sm); border:none;
+    font-family:'DM Sans',sans-serif; font-size:13px; font-weight:700; cursor:pointer;
+    transition:all .15s;
+}
+.wifi-btn-save { background:linear-gradient(135deg,#3b82f6,#2563eb); color:white; }
+.wifi-btn-save:hover { box-shadow:0 4px 14px rgba(59,130,246,.35); }
+.wifi-btn-save:disabled { opacity:.5; cursor:not-allowed; box-shadow:none; }
+.wifi-btn-cancel { background:var(--surface-alt); color:var(--text-secondary); border:1px solid var(--border); }
+.wifi-settings-note {
+    margin-top:14px; font-size:11px; color:var(--amber); background:var(--amber-soft);
+    border-radius:var(--radius-sm); padding:10px 12px; line-height:1.5;
+}
+.wifi-settings-status {
+    margin-top:12px; font-size:12px; font-weight:600; padding:9px 12px;
+    border-radius:var(--radius-sm); display:none;
+}
+.wifi-settings-status.show { display:block; }
+.wifi-settings-status.sending   { background:var(--blue-soft); color:#1d4ed8; }
+.wifi-settings-status.switching { background:var(--amber-soft); color:#b45309; }
+.wifi-settings-status.error     { background:var(--red-soft); color:#b91c1c; }
+
+/* ─── WiFi scan list ─── */
+.wifi-scan-row { display:flex; align-items:center; justify-content:space-between; margin-top:4px; }
+.wifi-scan-btn {
+    display:inline-flex; align-items:center; gap:6px;
+    background:none; border:none; color:var(--blue); font-size:12px; font-weight:700;
+    cursor:pointer; padding:4px 0;
+}
+.wifi-scan-btn svg { width:14px; height:14px; stroke:var(--blue); transition:transform .5s linear; }
+.wifi-scan-btn.scanning svg { animation: scan-spin 1s linear infinite; }
+@keyframes scan-spin { to { transform: rotate(360deg); } }
+.wifi-scan-list {
+    margin-top:8px; max-height:190px; overflow-y:auto;
+    border:1px solid var(--border); border-radius:var(--radius-sm);
+    display:none; background:var(--surface-alt);
+}
+.wifi-scan-list.show { display:block; }
+.wifi-scan-item {
+    padding:10px 12px; font-size:13px; display:flex; align-items:center; justify-content:space-between;
+    cursor:pointer; border-bottom:1px solid var(--border); transition:background .1s;
+}
+.wifi-scan-item:last-child { border-bottom:none; }
+.wifi-scan-item:hover { background:var(--surface); }
+.wifi-scan-item-name { display:flex; align-items:center; gap:8px; font-weight:600; }
+.wifi-scan-item-name svg { width:15px; height:15px; stroke:var(--text-secondary); flex-shrink:0; }
+.wifi-scan-item-lock { font-size:11px; color:var(--text-muted); }
+.wifi-scan-empty, .wifi-scan-loading {
+    padding:14px 12px; text-align:center; font-size:12px; color:var(--text-muted);
+}
+
+/* ─── Danger Zone: รีเซ็ต WiFi ทั้งหมด ─── */
+.wifi-danger-zone {
+    margin-top:20px; padding-top:16px; border-top:1.5px dashed rgba(239,68,68,.25);
+}
+.wifi-danger-title { font-size:12px; font-weight:700; color:var(--red); margin-bottom:6px; }
+.wifi-danger-desc { font-size:11px; color:var(--text-secondary); line-height:1.6; margin-bottom:12px; }
+.wifi-btn-danger {
+    width:100%; padding:11px 14px; border-radius:var(--radius-sm); border:1.5px solid var(--red);
+    background:var(--red-soft); color:var(--red); font-family:'DM Sans',sans-serif;
+    font-size:13px; font-weight:700; cursor:pointer; transition:all .15s;
+}
+.wifi-btn-danger:hover { background:var(--red); color:white; }
+.wifi-btn-danger:disabled { opacity:.4; cursor:not-allowed; background:var(--red-soft); color:var(--red); }
+.wifi-reset-confirm {
+    display:none; margin-top:12px; padding:14px; background:var(--red-soft);
+    border-radius:var(--radius-sm); border:1px solid rgba(239,68,68,.25);
+}
+.wifi-reset-confirm.show { display:block; }
+.wifi-reset-confirm-text { font-size:12px; color:#991b1b; margin-bottom:10px; line-height:1.5; }
+.wifi-reset-confirm-text code {
+    background:white; padding:1px 6px; border-radius:4px; font-family:'Space Mono',monospace; font-weight:700;
+}
+#wifiResetConfirmInput {
+    width:100%; padding:9px 12px; border-radius:var(--radius-sm); border:1.5px solid var(--red);
+    font-family:'Space Mono',monospace; font-size:13px; margin-bottom:10px; outline:none;
+}
+.wifi-reset-confirm-actions { display:flex; gap:8px; }
+.wifi-reset-confirm-actions .wifi-btn-danger { flex:1; }
+.wifi-reset-confirm-actions .wifi-btn-cancel { flex:1; padding:11px 14px; border-radius:var(--radius-sm); }
 
 /* ─── Sensor grid ─── */
 .container {
@@ -161,39 +304,64 @@ body::before {
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
     padding:24px 16px;border-radius:var(--radius-md);border:1.5px solid var(--border);
     background:var(--surface-alt);cursor:pointer;font-family:'DM Sans',sans-serif;
-    transition:all .2s;position:relative;overflow:hidden;touch-action:manipulation;
+    transition:all .15s ease;position:relative;overflow:hidden;touch-action:manipulation;
 }
 .ctrl-btn::before { content:'';position:absolute;inset:0;opacity:0;transition:opacity .2s;border-radius:var(--radius-md); }
 .ctrl-btn:hover  { transform:translateY(-2px);box-shadow:var(--shadow-md); }
-.ctrl-btn:active { transform:scale(.97); }
+.ctrl-btn:active { transform:scale(.94); }
+
+.ctrl-btn .ripple {
+    position:absolute;border-radius:50%;
+    background:rgba(0,0,0,.12);
+    transform:scale(0);
+    animation:ripple-expand .55s ease-out forwards;
+    pointer-events:none;
+}
+@keyframes ripple-expand {
+    to { transform:scale(3.2); opacity:0; }
+}
+
+@keyframes pulse-ring-green {
+    0%   { box-shadow:0 0 0 0 rgba(34,197,94,.45); }
+    70%  { box-shadow:0 0 0 16px rgba(34,197,94,0); }
+    100% { box-shadow:0 0 0 0 rgba(34,197,94,0); }
+}
+@keyframes pulse-ring-blue {
+    0%   { box-shadow:0 0 0 0 rgba(59,130,246,.45); }
+    70%  { box-shadow:0 0 0 16px rgba(59,130,246,0); }
+    100% { box-shadow:0 0 0 0 rgba(59,130,246,0); }
+}
+.btn-mix.just-toggled      { animation: pulse-ring-green .6s ease-out; }
+.btn-solenoid.just-toggled { animation: pulse-ring-blue .6s ease-out; }
 
 .btn-mix      { border-color:rgba(34,197,94,.25); }
 .btn-mix::before { background:linear-gradient(135deg,#f0fdf4,#dcfce7); }
 .btn-mix:hover::before { opacity:1; }
-.btn-mix.on   { background:linear-gradient(135deg,#dcfce7,#bbf7d0);border-color:var(--green);box-shadow:0 0 0 3px rgba(34,197,94,.12); }
+.btn-mix.on   { background:linear-gradient(135deg,#dcfce7,#bbf7d0);border-color:var(--green);box-shadow:0 0 0 3px rgba(34,197,94,.18); }
 
 .btn-solenoid { border-color:rgba(59,130,246,.25); }
 .btn-solenoid::before { background:linear-gradient(135deg,#eff6ff,#dbeafe); }
 .btn-solenoid:hover::before { opacity:1; }
-.btn-solenoid.on { background:linear-gradient(135deg,#dbeafe,#bfdbfe);border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.12); }
+.btn-solenoid.on { background:linear-gradient(135deg,#dbeafe,#bfdbfe);border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.18); }
 
-.ctrl-icon { width:44px;height:44px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;transition:background .2s; }
+.ctrl-icon { width:44px;height:44px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;transition:background .2s,transform .2s; }
 .btn-mix .ctrl-icon         { background:rgba(34,197,94,.12); }
-.btn-mix.on .ctrl-icon      { background:var(--green); }
+.btn-mix.on .ctrl-icon      { background:var(--green); transform:scale(1.08); }
 .btn-solenoid .ctrl-icon    { background:rgba(59,130,246,.12); }
-.btn-solenoid.on .ctrl-icon { background:var(--blue); }
+.btn-solenoid.on .ctrl-icon { background:var(--blue); transform:scale(1.08); }
 .ctrl-icon svg { width:22px;height:22px;transition:stroke .2s; }
 .ctrl-btn .ctrl-icon svg    { stroke:var(--text-secondary);fill:none; }
 .ctrl-btn.on .ctrl-icon svg { stroke:white; }
 .ctrl-label { font-size:14px;font-weight:600;color:var(--text-primary); }
-.ctrl-state { font-size:11px;font-family:'Space Mono',monospace;font-weight:700;letter-spacing:.06em;padding:3px 10px;border-radius:999px;transition:all .2s; }
+.ctrl-state { font-size:11px;font-family:'Space Mono',monospace;font-weight:700;letter-spacing:.06em;padding:3px 10px;border-radius:999px;transition:all .2s;display:inline-flex;align-items:center;gap:5px; }
 .ctrl-state.off { background:var(--surface-alt);color:var(--text-muted);border:1px solid var(--border); }
 .btn-mix.on .ctrl-state      { background:var(--green);color:white;border:1px solid transparent; }
 .btn-solenoid.on .ctrl-state { background:var(--blue);color:white;border:1px solid transparent; }
 
-/* ════════════════════════════════
-   POSITION CARD (spans 2 columns)
-   ════════════════════════════════ */
+.state-dot { width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.5; }
+.ctrl-btn.on .state-dot { animation: blink-dot 1s infinite; }
+@keyframes blink-dot { 0%,100%{opacity:1} 50%{opacity:.3} }
+
 .position-card {
     grid-column: span 2;
     background: var(--surface-alt);
@@ -214,7 +382,6 @@ body::before {
 .position-title { font-size:14px;font-weight:700; }
 .position-hint  { font-size:11px;color:var(--text-muted);font-family:'Space Mono',monospace;margin-top:2px; }
 
-/* live badge */
 .lid-state-badge {
     margin-left:auto;
     font-size:11px;font-weight:700;font-family:'Space Mono',monospace;letter-spacing:.06em;
@@ -225,7 +392,6 @@ body::before {
 }
 .lid-state-badge.open { background:var(--green-soft);color:var(--green-dark);border-color:rgba(34,197,94,.3); }
 
-/* ── UP / DOWN buttons ── */
 .position-btns { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
 
 .hold-btn {
@@ -250,7 +416,6 @@ body::before {
     user-select: none;
 }
 
-/* colour fill overlay while holding */
 .hold-btn::after {
     content: '';
     position: absolute; inset: 0;
@@ -263,13 +428,11 @@ body::before {
 .btn-up   { border-color:rgba(34,197,94,.3); }
 .btn-down { border-color:rgba(245,158,11,.3); }
 
-/* holding state */
 .hold-btn.holding { transform:scale(.97); }
 .hold-btn.holding::after { opacity:1; }
 .btn-up.holding   { border-color:var(--green);box-shadow:0 0 0 3px rgba(34,197,94,.15); }
 .btn-down.holding { border-color:var(--amber);box-shadow:0 0 0 3px rgba(245,158,11,.15); }
 
-/* icon circle */
 .hold-btn-icon {
     width:36px;height:36px;border-radius:8px;
     display:flex;align-items:center;justify-content:center;
@@ -299,21 +462,89 @@ body::before {
 .btn-up.holding   .hold-label { color:var(--green-dark); }
 .btn-down.holding .hold-label { color:#92400e; }
 
-/* ─── Auto Banner ─── */
 .auto-banner {
-    display:none;align-items:center;justify-content:center;gap:16px;
+    display:none;flex-direction:column;gap:22px;
     padding:28px;background:linear-gradient(135deg,#f5f3ff,#ede9fe);
     border:1.5px solid rgba(124,58,237,.2);border-radius:var(--radius-md);
     animation:fade-in .35s ease;
 }
 .auto-banner.visible { display:flex; }
 @keyframes fade-in { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+.auto-banner-top { display:flex;align-items:center;gap:16px; }
 .auto-spinner { width:40px;height:40px;border-radius:50%;border:3px solid rgba(124,58,237,.2);border-top-color:#7c3aed;animation:spin 1s linear infinite;flex-shrink:0; }
 @keyframes spin { to{transform:rotate(360deg)} }
 .auto-text h3 { margin:0 0 4px;font-size:16px;font-weight:700;color:#5b21b6; }
 .auto-text p  { margin:0;font-size:13px;color:#7c3aed;opacity:.8; }
 
-/* ═══ RESPONSIVE ═══ */
+.auto-status-grid { display:grid;grid-template-columns:repeat(2,1fr);gap:10px; }
+.auto-chip {
+    display:flex;align-items:center;gap:10px;
+    background:rgba(255,255,255,.65);border:1.5px solid rgba(124,58,237,.15);
+    border-radius:var(--radius-sm);padding:12px 14px;transition:all .25s;
+}
+.auto-chip.active { background:#ffffff;border-color:rgba(34,197,94,.35);box-shadow:0 2px 10px rgba(34,197,94,.12); }
+.chip-dot {
+    width:10px;height:10px;border-radius:50%;flex-shrink:0;
+    background:var(--text-muted);opacity:.4;transition:all .25s;
+}
+.auto-chip.active .chip-dot { background:var(--green);opacity:1;animation:blink-dot 1.1s infinite; box-shadow:0 0 0 4px rgba(34,197,94,.18); }
+.chip-text { display:flex;flex-direction:column;line-height:1.25; }
+.chip-label { font-size:12px;font-weight:700;color:var(--text-primary); }
+.chip-state { font-size:10px;font-family:'Space Mono',monospace;color:var(--text-muted);letter-spacing:.04em; }
+.auto-chip.active .chip-state { color:var(--green-dark);font-weight:700; }
+
+.auto-chip.chip-solenoid.active {
+    border-color: rgba(59,130,246,.35);
+    box-shadow: 0 2px 10px rgba(59,130,246,.12);
+}
+.auto-chip.chip-solenoid.active .chip-dot {
+    background: var(--blue);
+    box-shadow: 0 0 0 4px rgba(59,130,246,.18);
+}
+.auto-chip.chip-solenoid.active .chip-state {
+    color: var(--blue);
+}
+
+/* ─── Auto Mix Timer settings (ใหม่) — ตั้งรอบเวลาผสมได้เองจาก Dashboard เฉพาะโหมด Auto ─── */
+.auto-timer-config {
+    padding: 20px 22px;
+    background: rgba(255,255,255,.65);
+    border: 1.5px solid rgba(124,58,237,.15);
+    border-radius: var(--radius-md);
+}
+.auto-timer-title { font-size:13px;font-weight:700;color:#5b21b6;margin-bottom:2px; }
+.auto-timer-sub   { font-size:11px;color:#7c3aed;opacity:.75;margin-bottom:14px; }
+.auto-timer-fields { display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px; }
+.auto-timer-field label { display:block;font-size:11px;font-weight:600;color:#5b21b6;margin-bottom:6px; }
+.auto-timer-field input {
+    width:100%;padding:10px 12px;border-radius:var(--radius-sm);
+    border:1.5px solid rgba(124,58,237,.25);background:white;
+    font-family:'Space Mono',monospace;font-size:14px;color:#5b21b6;outline:none;
+    transition:border-color .15s;
+}
+.auto-timer-field input:focus { border-color:#7c3aed; }
+.auto-timer-save-btn {
+    width:100%;padding:11px 14px;border-radius:var(--radius-sm);border:none;
+    background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:white;
+    font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;
+    transition:all .15s;
+}
+.auto-timer-save-btn:hover { box-shadow:0 4px 14px rgba(124,58,237,.35); }
+.auto-timer-save-btn:disabled { opacity:.5;cursor:not-allowed;box-shadow:none; }
+.auto-timer-status {
+    margin-top:10px;font-size:12px;font-weight:600;padding:9px 12px;
+    border-radius:var(--radius-sm);display:none;
+}
+.auto-timer-status.show { display:block; }
+.auto-timer-status.saving  { background:rgba(59,130,246,.12);color:#1d4ed8; }
+.auto-timer-status.saved   { background:rgba(34,197,94,.12);color:#15803d; }
+.auto-timer-status.error   { background:rgba(239,68,68,.12);color:#b91c1c; }
+.auto-timer-current {
+    margin-top:12px;font-size:11px;color:#5b21b6;
+    font-family:'Space Mono',monospace;line-height:1.6;
+    padding-top:12px;border-top:1px dashed rgba(124,58,237,.2);
+}
+
 @media (min-width:1024px) {
     .container { max-width:1100px;gap:24px; }
     .big-value  { font-size:80px; }
@@ -345,7 +576,6 @@ body::before {
     .control-header { flex-direction:column;align-items:flex-start;gap:14px; }
     .mode-toggle { width:100%; }
     .mode-btn { flex:1;text-align:center;padding:8px 12px;font-size:12px; }
-    /* 2-col grid: position-card(full width) + mix + solenoid */
     .manual-controls { grid-template-columns:1fr 1fr;gap:10px; }
     .position-card   { grid-column:span 2; }
     .ctrl-btn { padding:16px 8px;gap:8px; }
@@ -353,7 +583,10 @@ body::before {
     .ctrl-icon svg { width:18px;height:18px; }
     .ctrl-label { font-size:12px; }
     .ctrl-state { font-size:10px;padding:2px 8px; }
-    .auto-banner { padding:20px 16px;gap:12px;flex-direction:column;text-align:center; }
+    .auto-banner { padding:20px 16px;gap:16px; }
+    .auto-banner-top { flex-direction:column;text-align:center; }
+    .auto-status-grid { grid-template-columns:1fr; }
+    .auto-timer-fields { grid-template-columns: 1fr; }
 }
 @media (max-width:380px) {
     .big-value { font-size:52px; }
@@ -373,10 +606,101 @@ body::before {
     </div>
     <h1>IoT-Enabled Automatic<br>Organic Composting Machine</h1>
     <p>IoT-Based Real-Time Monitoring &amp; Control System</p>
-    <div class="wifi-card">
-        <div class="wifi-icon-box disconnected" id="wifiBox"><span class="wifi-emoji">📡</span></div>
-        <span class="wifi-label">ESP32</span>
-        <div id="status" class="wifi-status disconnected">Disconnected</div>
+
+    <div class="wifi-card-row">
+        <div class="wifi-card">
+            <div class="wifi-icon-box disconnected" id="wifiBox"><span class="wifi-emoji">📡</span></div>
+            <div class="wifi-card-text">
+                <span class="wifi-label" id="wifiSsidLabel">ESP32</span>
+                <div id="status" class="wifi-status disconnected">Disconnected</div>
+            </div>
+        </div>
+        <!-- ปุ่มเปิดแผงตั้งค่า WiFi ระยะไกล -->
+        <button class="wifi-settings-btn" id="wifiSettingsToggle" title="ตั้งค่า WiFi">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09A1.65 1.65 0 0015 4.6a1.65 1.65 0 001.82.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- ════ WiFi Settings Panel ════ -->
+    <div class="wifi-settings-wrap">
+        <div class="wifi-settings-card" id="wifiSettingsCard">
+            <div class="wifi-settings-title">📶 เพิ่มช่องทางการเชื่อมต่อเครือข่าย Wi-Fi </div>
+            <!--<div class="wifi-settings-sub">เพิ่ม Wi-Fi สำรอง โดยยังคง Wi-Fi เดิมไว้ หาก Wi-Fi หลักหลุด ระบบจะสลับไปใช้ Wi-Fi สำรองโดยอัตโนมัติ</div>-->
+
+            <!-- ══ ลิสต์ WiFi ที่เครื่องจำไว้ทั้งหมด ══ -->
+            <div class="wifi-saved-section">
+                <div class="wifi-saved-title">Wi-Fi ที่เครื่องบันทึกไว้ (สูงสุด 3 เครือข่าย)</div>
+                <div class="wifi-saved-list" id="wifiSavedList">
+                    <div class="wifi-saved-empty">กำลังโหลด...</div>
+                </div>
+            </div>
+
+            <div class="wifi-field">
+                <label for="wifiSsidInput">ชื่อ WiFi (SSID)</label>
+                <div class="wifi-input-row">
+                    <input type="text" id="wifiSsidInput" placeholder="เช่น Home_WiFi_2.4G" autocomplete="off">
+                </div>
+                <div class="wifi-scan-row">
+                    <button type="button" class="wifi-scan-btn" id="wifiScanBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M23 4v6h-6M1 20v-6h6"/>
+                            <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                        </svg>
+                        สแกนหา WiFi 
+                    </button>
+                </div>
+                <div class="wifi-scan-list" id="wifiScanList"></div>
+            </div>
+
+            <div class="wifi-field">
+                <label for="wifiPassInput">รหัสผ่าน</label>
+                <div class="wifi-input-row">
+                    <input type="password" id="wifiPassInput" placeholder="รหัสผ่าน WiFi" autocomplete="off">
+                    <button type="button" class="wifi-toggle-eye" id="wifiTogglePass">แสดง</button>
+                </div>
+            </div>
+
+            <div class="wifi-settings-actions">
+                <button class="wifi-btn wifi-btn-cancel" id="wifiCancelBtn">ยกเลิก</button>
+                <button class="wifi-btn wifi-btn-save" id="wifiSaveBtn">เพิ่มเครือข่าย Wi-Fi</button>
+            </div>
+
+            <div class="wifi-settings-note">
+                <b>ข้อควรทราบ:</b> ปุ่มสแกนจะแสดงเฉพาะ Wi-Fi ที่ <b>ESP32 ตรวจพบ</b> และใช้งานได้ขณะอุปกรณ์ <b>ยังออนไลน์อยู่</b> เท่านั้น
+                หากอุปกรณ์หลุดจาก Wi-Fi และไม่พบเครือข่ายที่บันทึกไว้ กรุณาตั้งค่าผ่าน <b>โหมด Access Point (AP)</b> ที่ตัวอุปกรณ์โดยตรง
+            </div>
+
+            <div class="wifi-settings-status" id="wifiSettingsStatus"></div>
+
+            <!-- ══ Danger Zone: รีเซ็ต WiFi ทั้งหมด ══ -->
+            <div class="wifi-danger-zone">
+                <div class="wifi-danger-title">การดำเนินการที่มีความเสี่ยง</div>
+                <div class="wifi-danger-desc">
+                    การดำเนินการนี้จะลบ Wi-Fi ที่บันทึกไว้ทั้งหมด
+                     จากนั้นตัวเครื่องจะรีสตาร์ทและเข้าสู่โหมดตั้งค่า
+                    <b>Access Point (AP)</b> 
+                    <br>
+                    <b>กรุณาตรวจสอบให้แน่ใจก่อนดำเนินการ เนื่องจากจะไม่สามารถกู้คืนหรือดำเนินการย้อนกลับจากระยะไกลได้
+                    และจำเป็นต้องเชื่อมต่อ Wi-Fi ที่ตัวเครื่องเพื่อดำเนินการตั้งค่าใหม่เท่านั้น</b>
+                </div>
+                <button type="button" class="wifi-btn-danger" id="wifiResetBtn">รีเซ็ต WiFi ทั้งหมด</button>
+
+                <!-- แผงยืนยัน ต้องพิมพ์คำว่า RESET ให้ตรงก่อนถึงจะกดยืนยันได้ -->
+                <div class="wifi-reset-confirm" id="wifiResetConfirm">
+                    <div class="wifi-reset-confirm-text">
+                        พิมพ์คำว่า <code>RESET</code> เพื่อยืนยันว่าต้องการลบ WiFi ทั้งหมดจริงๆ
+                    </div>
+                    <input type="text" id="wifiResetConfirmInput" placeholder="พิมพ์ RESET" autocomplete="off">
+                    <div class="wifi-reset-confirm-actions">
+                        <button type="button" class="wifi-btn wifi-btn-cancel" id="wifiResetCancelBtn">ยกเลิก</button>
+                        <button type="button" class="wifi-btn-danger" id="wifiResetConfirmBtn" disabled>ยืนยันรีเซ็ตทั้งหมด</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -466,7 +790,6 @@ body::before {
         <!-- Manual Controls -->
         <div class="manual-controls" id="manualControls">
 
-            <!-- ══ POSITION CARD (2 cols) ══ -->
             <div class="position-card">
                 <div class="position-header">
                     <div class="position-icon-box">
@@ -481,10 +804,8 @@ body::before {
                     <span class="lid-state-badge" id="lidBadge">DOWN</span>
                 </div>
 
-                <!-- UP / DOWN hold buttons -->
                 <div class="position-btns">
 
-                    <!-- UP -->
                     <button class="hold-btn btn-up" id="btnUp"
                         onmousedown="holdStart('up')"    onmouseup="holdEnd('up')"    onmouseleave="holdEnd('up')"
                         ontouchstart="holdStart('up')"   ontouchend="holdEnd('up')"   ontouchcancel="holdEnd('up')">
@@ -498,7 +819,6 @@ body::before {
                         </div>
                     </button>
 
-                    <!-- DOWN -->
                     <button class="hold-btn btn-down" id="btnDown"
                         onmousedown="holdStart('down')"   onmouseup="holdEnd('down')"   onmouseleave="holdEnd('down')"
                         ontouchstart="holdStart('down')"  ontouchend="holdEnd('down')"  ontouchcancel="holdEnd('down')">
@@ -513,10 +833,9 @@ body::before {
                     </button>
 
                 </div>
-            </div><!-- /position-card -->
+            </div>
 
-            <!-- Mix -->
-            <button class="ctrl-btn btn-mix" id="btnMix" onclick="toggleCtrl('mix')">
+            <button class="ctrl-btn btn-mix" id="btnMix" onclick="toggleCtrl('mix', event)">
                 <div class="ctrl-icon">
                     <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 2a10 10 0 100 20A10 10 0 0012 2z"/>
@@ -524,11 +843,10 @@ body::before {
                     </svg>
                 </div>
                 <span class="ctrl-label">Mix</span>
-                <span class="ctrl-state off" id="stateMix">OFF</span>
+                <span class="ctrl-state off" id="stateMix"><span class="state-dot"></span>OFF</span>
             </button>
 
-            <!-- Solenoid -->
-            <button class="ctrl-btn btn-solenoid" id="btnSolenoid" onclick="toggleCtrl('solenoid')">
+            <button class="ctrl-btn btn-solenoid" id="btnSolenoid" onclick="toggleCtrl('solenoid', event)">
                 <div class="ctrl-icon">
                     <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 2C6 2 2 6 2 12c0 4.5 2.5 8.4 6.2 10.4"/>
@@ -538,17 +856,54 @@ body::before {
                     </svg>
                 </div>
                 <span class="ctrl-label">Solenoid</span>
-                <span class="ctrl-state off" id="stateSolenoid">OFF</span>
+                <span class="ctrl-state off" id="stateSolenoid"><span class="state-dot"></span>OFF</span>
             </button>
 
-        </div><!-- /manual-controls -->
+        </div>
 
-        <!-- Auto Banner -->
         <div class="auto-banner" id="autoBanner">
-            <div class="auto-spinner"></div>
-            <div class="auto-text">
-                <h3>System is running automatically</h3>
-                <p>The machine is managing all operations on its own — no manual input required.</p>
+            <div class="auto-banner-top">
+                <div class="auto-spinner"></div>
+                <div class="auto-text">
+                    <h3>System is running automatically</h3>
+                    <p>The machine is managing all operations on its own — no manual input required.</p>
+                </div>
+            </div>
+
+            <div class="auto-status-grid" id="autoStatusGrid">
+                <div class="auto-chip" id="autoChipMix">
+                    <span class="chip-dot"></span>
+                    <div class="chip-text">
+                        <span class="chip-label">Mix</span>
+                        <span class="chip-state" id="autoChipMixState">Idle</span>
+                    </div>
+                </div>
+                <div class="auto-chip chip-solenoid" id="autoChipSolenoid">
+                    <span class="chip-dot"></span>
+                    <div class="chip-text">
+                        <span class="chip-label">Solenoid</span>
+                        <span class="chip-state" id="autoChipSolenoidState">Idle</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ ตั้งรอบเวลาการผสม (ใหม่) — ใช้ได้เฉพาะโหมด Auto ══ -->
+            <div class="auto-timer-config" id="autoTimerConfig">
+                <div class="auto-timer-title">⏱️ ตั้งค่ารอบเวลาการกลับกอง (Auto)</div>
+                <div class="auto-timer-sub">กำหนดได้เอง — กลับกองกี่นาที แล้วพักกี่นาที (1 - 720 นาที)</div>
+                <div class="auto-timer-fields">
+                    <div class="auto-timer-field">
+                        <label for="mixOnMinInput">กลับกอง (นาที)</label>
+                        <input type="number" id="mixOnMinInput" min="1" max="720" step="1" placeholder="30">
+                    </div>
+                    <div class="auto-timer-field">
+                        <label for="mixOffMinInput">พัก (นาที)</label>
+                        <input type="number" id="mixOffMinInput" min="1" max="720" step="1" placeholder="30">
+                    </div>
+                </div>
+                <button class="auto-timer-save-btn" id="autoTimerSaveBtn">บันทึกรอบเวลา</button>
+                <div class="auto-timer-status" id="autoTimerStatus"></div>
+                <div class="auto-timer-current" id="autoTimerCurrent">กำลังโหลดค่าปัจจุบันจากเครื่อง...</div>
             </div>
         </div>
 
@@ -562,6 +917,7 @@ document.addEventListener("DOMContentLoaded", function () {
     /* ── MQTT ── */
     const statusEl  = document.getElementById("status");
     const wifiBox   = document.getElementById("wifiBox");
+    const wifiSsidLabel = document.getElementById("wifiSsidLabel");
     const moisEl    = document.getElementById("mois");
     const moisBarEl = document.getElementById("moisBar");
     const tempEl    = document.getElementById("temp");
@@ -569,12 +925,29 @@ document.addEventListener("DOMContentLoaded", function () {
     const phEl      = document.getElementById("ph");
     const phBarEl   = document.getElementById("phBar");
 
+    const TOPIC_SENSOR       = "esp32/mek_soil_001";
+    const TOPIC_STATUS       = "esp32/status";
+    const TOPIC_CONTROL      = "esp32/control";
+    const TOPIC_WIFI_CONFIG  = "esp32/wifi_config";      
+    const TOPIC_WIFI_ACK     = "esp32/wifi_config_ack";  
+    const TOPIC_WIFI_SCAN_REQ = "esp32/wifi_scan_request";
+    const TOPIC_WIFI_SCAN_RES = "esp32/wifi_scan_result"; 
+    const TOPIC_WIFI_INFO     = "esp32/wifi_info";        
+    const TOPIC_WIFI_RESET_REQ = "esp32/wifi_reset_request";
+    const TOPIC_WIFI_SAVED_LIST = "esp32/wifi_saved_list";  
+
+    // ── ใหม่: หัวข้อ MQTT สำหรับตั้งรอบเวลาผสม (Auto) จาก Dashboard ──
+    const TOPIC_AUTO_TIMER_CONFIG = "esp32/auto_timer_config"; // Dashboard -> ESP32
+    const TOPIC_AUTO_TIMER_ACK    = "esp32/auto_timer_ack";    // ESP32 -> Dashboard (ยืนยัน)
+    const TOPIC_AUTO_TIMER_INFO   = "esp32/auto_timer_info";   // ESP32 -> Dashboard (ค่าปัจจุบัน + นับถอยหลัง)
+
     const client = mqtt.connect('wss://broker.hivemq.com:8884/mqtt', {
-        will: { topic: 'esp32/status', payload: 'offline', qos: 1, retain: true }
+        reconnectPeriod: 2000,
+        connectTimeout: 8000
     });
 
     let lastMessageTime = Date.now();
-    const timeoutLimit  = 10000;
+    const timeoutLimit  = 20000;
     let statusReady = false;
     let offlineTimer = null;
 
@@ -582,33 +955,134 @@ document.addEventListener("DOMContentLoaded", function () {
         if (offlineTimer) { clearTimeout(offlineTimer); offlineTimer = null; }
         statusEl.textContent = "Connected";
         statusEl.className   = "wifi-status connected";
-        wifiBox.classList.replace("disconnected", "connected");
+        wifiBox.className    = "wifi-icon-box connected";
+    }
+    function setReconnecting() {
+        statusEl.textContent = "Reconnecting…";
+        statusEl.className   = "wifi-status reconnecting";
+        wifiBox.className    = "wifi-icon-box reconnecting";
     }
     function setDisconnected() {
         statusEl.textContent = "Disconnected";
         statusEl.className   = "wifi-status disconnected";
-        wifiBox.classList.replace("connected", "disconnected");
+        wifiBox.className    = "wifi-icon-box disconnected";
     }
 
     client.on('connect', function () {
-        client.subscribe("esp32/mek_soil_001");
-        client.subscribe("esp32/status");
+        client.subscribe(TOPIC_SENSOR);
+        client.subscribe(TOPIC_STATUS);
+        client.subscribe(TOPIC_WIFI_ACK);      
+        client.subscribe(TOPIC_WIFI_SCAN_RES); 
+        client.subscribe(TOPIC_WIFI_INFO);     
+        client.subscribe(TOPIC_WIFI_SAVED_LIST);
+        client.subscribe(TOPIC_AUTO_TIMER_ACK);   // ใหม่
+        client.subscribe(TOPIC_AUTO_TIMER_INFO);  // ใหม่
         offlineTimer = setTimeout(function () { statusReady = true; }, 4000);
     });
 
+    client.on('reconnect', setReconnecting);
+    client.on('close',     setReconnecting);
+    client.on('offline',   setReconnecting);
+    client.on('error',     function () { /* swallow; reconnect handles UI */ });
+
     client.on('message', function (topic, message) {
-        if (topic === 'esp32/status') {
+        if (topic === TOPIC_STATUS) {
             const s = message.toString();
-            if (s === 'online')               { statusReady = true; setConnected(); }
+            if (s === 'online')  { statusReady = true; lastMessageTime = Date.now(); setConnected(); }
             if (s === 'offline' && statusReady) setDisconnected();
             return;
         }
+
+        if (topic === TOPIC_WIFI_ACK) {
+            try {
+                const ack = JSON.parse(message.toString());
+                if (ack.status === 'resetting') {
+                    showWifiStatus('error', '🔄 กำลังลบ WiFi ทั้งหมดและรีสตาร์ทเครื่อง — เครื่องจะเปิดโหมด Access Point ให้ตั้งค่าใหม่ที่ตัวเครื่องเท่านั้น');
+                } else {
+                    showWifiStatus('switching', '✅ บันทึก "' + ack.ssid + '" เป็น WiFi สำรองแล้ว — ถ้าเครือข่ายหลักหลุด เครื่องจะสลับมาใช้ตัวนี้เอง');
+                }
+                wifiSaveBtn.disabled = false;
+                wifiSaveBtn.textContent = 'เพิ่มเป็น WiFi สำรอง';
+            } catch (e) {}
+            return;
+        }
+
+        if (topic === TOPIC_WIFI_SCAN_RES) {
+            try {
+                const networks = JSON.parse(message.toString());
+                renderScanResults(networks);
+            } catch (e) {
+                renderScanResults([]);
+            }
+            return;
+        }
+
+        if (topic === TOPIC_WIFI_INFO) {
+            try {
+                const info = JSON.parse(message.toString());
+                if (info.ssid) wifiSsidLabel.textContent = info.ssid;
+            } catch (e) {}
+            return;
+        }
+
+        if (topic === TOPIC_WIFI_SAVED_LIST) {
+            try {
+                const list = JSON.parse(message.toString());
+                renderSavedList(list);
+            } catch (e) {}
+            return;
+        }
+
+        // ── ใหม่: ผลบันทึกรอบเวลา Auto Mix ──
+        if (topic === TOPIC_AUTO_TIMER_ACK) {
+            try {
+                const ack = JSON.parse(message.toString());
+                if (ack.status === 'saved') {
+                    showAutoTimerStatus('saved', '✅ บันทึกรอบเวลาแล้ว: เปิด ' + ack.mix_on_min + ' นาที / พัก ' + ack.mix_off_min + ' นาที');
+                } else {
+                    showAutoTimerStatus('error', '⚠️ ' + (ack.message || 'บันทึกไม่สำเร็จ'));
+                }
+                autoTimerSaveBtn.disabled = false;
+                autoTimerSaveBtn.textContent = 'บันทึกรอบเวลา';
+            } catch (e) {}
+            return;
+        }
+
+        // ── ใหม่: ค่ารอบเวลาปัจจุบัน + นับถอยหลังของ Auto Mix ──
+        if (topic === TOPIC_AUTO_TIMER_INFO) {
+            try {
+                const info = JSON.parse(message.toString());
+                renderAutoTimerInfo(info);
+            } catch (e) {}
+            return;
+        }
+
         try {
             const data = JSON.parse(message.toString());
-            if (data.mois !== undefined) { moisEl.textContent = data.mois; moisBarEl.style.width = data.mois + "%"; }
-            if (data.temp !== undefined) { tempEl.textContent = data.temp; tempBarEl.style.width = Math.min(Math.max(data.temp, 0), 100) + "%"; }
-            if (data.ph   !== undefined) { phEl.textContent   = data.ph;   phBarEl.style.width   = Math.min(Math.max((data.ph / 14) * 100, 0), 100) + "%"; }
             lastMessageTime = Date.now();
+
+            // [แก้ปัญหา #3] บังคับทศนิยม 1 ตำแหน่งฝั่ง dashboard เป็นตัวกันสองชั้น
+            // เผื่อค่าที่ยิงมายังไม่ผ่านการ format จากฝั่ง ESP32
+            if (data.mois !== undefined) {
+                const v = Math.min(Math.max(Math.round(Number(data.mois)), 0), 100);
+                moisEl.textContent = v;
+                moisBarEl.style.width = v + "%";
+            }
+            if (data.temp !== undefined) {
+                const v = Number(data.temp).toFixed(1);
+                tempEl.textContent = v;
+                tempBarEl.style.width = Math.min(Math.max(v, 0), 100) + "%";
+            }
+            if (data.ph !== undefined) {
+                const v = Number(data.ph).toFixed(1);
+                phEl.textContent = v;
+                phBarEl.style.width = Math.min(Math.max((v / 14) * 100, 0), 100) + "%";
+            }
+
+            if (data.mix      !== undefined) setMixState(!!data.mix, false);
+            if (data.solenoid !== undefined) setSolenoidState(!!data.solenoid, false);
+            if (data.lid      !== undefined) setLidState(data.lid);
+
             statusReady = true;
             setConnected();
         } catch (e) {}
@@ -618,46 +1092,287 @@ document.addEventListener("DOMContentLoaded", function () {
         if (statusReady && Date.now() - lastMessageTime > timeoutLimit) setDisconnected();
     }, 2000);
 
-    /* ── Mode ── */
-    window.currentMode = 'manual';
-    window.setMode = function (mode) {
-        window.currentMode = mode;
-        const btnManual  = document.getElementById("btnManual");
-        const btnAuto    = document.getElementById("btnAuto");
-        const manualCtrl = document.getElementById("manualControls");
-        const autoBanner = document.getElementById("autoBanner");
-        if (mode === 'manual') {
-            btnManual.className = "mode-btn active-manual";
-            btnAuto.className   = "mode-btn";
-            manualCtrl.style.display = "grid";
-            autoBanner.classList.remove("visible");
-            client.publish("esp32/control", JSON.stringify({ mode: "manual" }));
-        } else {
-            btnAuto.className   = "mode-btn active-auto";
-            btnManual.className = "mode-btn";
-            manualCtrl.style.display = "none";
-            autoBanner.classList.add("visible");
-            client.publish("esp32/control", JSON.stringify({ mode: "auto" }));
+    /* ── WiFi Settings Panel ── */
+    const wifiSettingsToggle = document.getElementById('wifiSettingsToggle');
+    const wifiSettingsCard   = document.getElementById('wifiSettingsCard');
+    const wifiSsidInput      = document.getElementById('wifiSsidInput');
+    const wifiPassInput      = document.getElementById('wifiPassInput');
+    const wifiTogglePass     = document.getElementById('wifiTogglePass');
+    const wifiSaveBtn        = document.getElementById('wifiSaveBtn');
+    const wifiCancelBtn      = document.getElementById('wifiCancelBtn');
+    const wifiSettingsStatus = document.getElementById('wifiSettingsStatus');
+    const wifiScanBtn        = document.getElementById('wifiScanBtn');
+    const wifiScanList       = document.getElementById('wifiScanList');
+    const wifiSavedList      = document.getElementById('wifiSavedList');
+    const wifiResetBtn           = document.getElementById('wifiResetBtn');
+    const wifiResetConfirm       = document.getElementById('wifiResetConfirm');
+    const wifiResetConfirmInput  = document.getElementById('wifiResetConfirmInput');
+    const wifiResetConfirmBtn    = document.getElementById('wifiResetConfirmBtn');
+    const wifiResetCancelBtn     = document.getElementById('wifiResetCancelBtn');
+
+    let scanTimeoutHandle = null;
+
+    wifiSettingsToggle.addEventListener('click', function () {
+        wifiSettingsCard.classList.toggle('visible');
+    });
+    wifiCancelBtn.addEventListener('click', function () {
+        wifiSettingsCard.classList.remove('visible');
+        hideWifiStatus();
+        wifiScanList.classList.remove('show');
+    });
+
+    /* ── Reset WiFi ทั้งหมด — ต้องพิมพ์ RESET ยืนยันก่อนกดจริง ── */
+    wifiResetBtn.addEventListener('click', function () {
+        wifiResetConfirm.classList.add('show');
+        wifiResetConfirmInput.value = '';
+        wifiResetConfirmBtn.disabled = true;
+        wifiResetConfirmInput.focus();
+    });
+    wifiResetCancelBtn.addEventListener('click', function () {
+        wifiResetConfirm.classList.remove('show');
+    });
+    wifiResetConfirmInput.addEventListener('input', function () {
+        wifiResetConfirmBtn.disabled = (wifiResetConfirmInput.value.trim() !== 'RESET');
+    });
+    wifiResetConfirmBtn.addEventListener('click', function () {
+        if (wifiResetConfirmInput.value.trim() !== 'RESET') return;
+        if (!client.connected) {
+            showWifiStatus('error', 'ยังไม่ได้เชื่อมต่อกับเครื่อง ลองใหม่อีกครั้ง');
+            return;
         }
-    };
+        client.publish(TOPIC_WIFI_RESET_REQ, JSON.stringify({ confirm: true }));
+        wifiResetConfirm.classList.remove('show');
+        showWifiStatus('error', '🔄 ส่งคำสั่งรีเซ็ตแล้ว รอเครื่องยืนยันกลับ...');
+    });
 
-    /* ── Toggle (Mix / Solenoid) ── */
-    const states = { mix: false, solenoid: false };
-    window.toggleCtrl = function (name) {
-        states[name] = !states[name];
-        const val = states[name];
-        const btn  = document.getElementById(name === 'mix' ? 'btnMix' : 'btnSolenoid');
-        const stEl = document.getElementById(name === 'mix' ? 'stateMix' : 'stateSolenoid');
-        if (val) { btn.classList.add("on");    stEl.textContent = "ON";  stEl.classList.remove("off"); }
-        else     { btn.classList.remove("on"); stEl.textContent = "OFF"; stEl.classList.add("off"); }
-        const payload = {};
-        payload[name] = val ? 1 : 0;
-        client.publish("esp32/control", JSON.stringify(payload));
-    };
+    wifiTogglePass.addEventListener('click', function () {
+        const isPw = wifiPassInput.type === 'password';
+        wifiPassInput.type = isPw ? 'text' : 'password';
+        wifiTogglePass.textContent = isPw ? 'ซ่อน' : 'แสดง';
+    });
 
-    /* ════════════════════════════════════
-       POSITION — Press & Hold UP / DOWN
-       ════════════════════════════════════ */
+    wifiScanBtn.addEventListener('click', function () {
+        if (!client.connected) {
+            showWifiStatus('error', 'ยังไม่ได้เชื่อมต่อกับเครื่อง ลองใหม่อีกครั้ง');
+            return;
+        }
+        wifiScanBtn.classList.add('scanning');
+        wifiScanBtn.disabled = true;
+        wifiScanList.classList.add('show');
+        wifiScanList.innerHTML = '<div class="wifi-scan-loading">กำลังสแกนหา WiFi บริเวณใกล้เคียง...</div>';
+
+        client.publish(TOPIC_WIFI_SCAN_REQ, JSON.stringify({ action: 'scan' }));
+
+        if (scanTimeoutHandle) clearTimeout(scanTimeoutHandle);
+        scanTimeoutHandle = setTimeout(function () {
+            wifiScanBtn.classList.remove('scanning');
+            wifiScanBtn.disabled = false;
+            if (wifiScanList.innerHTML.indexOf('กำลังสแกน') !== -1) {
+                wifiScanList.innerHTML = '<div class="wifi-scan-empty">ลองใหม่อีกครั้ง</div>';
+            }
+        }, 8000);
+    });
+
+    /* ── แสดงชื่อ WiFi ที่เครื่องจำไว้ทั้งหมด ── */
+    function renderSavedList(list) {
+        if (!Array.isArray(list) || list.length === 0) {
+            wifiSavedList.innerHTML = '<div class="wifi-saved-empty">ยังไม่มีข้อมูล WiFi ที่จำไว้</div>';
+            return;
+        }
+
+        // เรียงให้ตัวที่ต่ออยู่ตอนนี้ขึ้นบนสุด
+        list.sort(function (a, b) { return (b.active ? 1 : 0) - (a.active ? 1 : 0); });
+
+        wifiSavedList.innerHTML = '';
+        list.forEach(function (net) {
+            const item = document.createElement('div');
+            item.className = 'wifi-saved-item' + (net.active ? ' active' : '');
+            item.innerHTML =
+                '<span class="wifi-saved-item-name">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                        '<path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/>' +
+                        '<path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1"/>' +
+                    '</svg>' +
+                    escapeHtml(net.ssid) +
+                '</span>' +
+                (net.active
+                    ? '<span class="wifi-saved-item-badge connected">กำลังใช้งาน</span>'
+                    : '<span class="wifi-saved-item-badge slot">สำรอง</span>');
+            wifiSavedList.appendChild(item);
+        });
+    }
+
+    function renderScanResults(networks) {
+        if (scanTimeoutHandle) { clearTimeout(scanTimeoutHandle); scanTimeoutHandle = null; }
+        wifiScanBtn.classList.remove('scanning');
+        wifiScanBtn.disabled = false;
+
+        if (!Array.isArray(networks) || networks.length === 0) {
+            wifiScanList.innerHTML = '<div class="wifi-scan-empty">ไม่พบเครือข่าย WiFi ใกล้เคียง</div>';
+            return;
+        }
+
+        // เรียงตามความแรงสัญญาณ (rssi ใกล้ 0 = แรงกว่า)
+        networks.sort(function (a, b) { return (b.rssi || -100) - (a.rssi || -100); });
+
+        wifiScanList.innerHTML = '';
+        networks.forEach(function (net) {
+            const item = document.createElement('div');
+            item.className = 'wifi-scan-item';
+            item.innerHTML =
+                '<span class="wifi-scan-item-name">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                        '<path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/>' +
+                        '<path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1"/>' +
+                    '</svg>' +
+                    escapeHtml(net.ssid) +
+                '</span>' +
+                '<span class="wifi-scan-item-lock">' + (net.secure ? '🔒' : 'เปิด') + '</span>';
+            item.addEventListener('click', function () {
+                wifiSsidInput.value = net.ssid;
+                wifiScanList.classList.remove('show');
+                wifiPassInput.focus();
+            });
+            wifiScanList.appendChild(item);
+        });
+    }
+
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    function showWifiStatus(kind, text) {
+        wifiSettingsStatus.className = 'wifi-settings-status show ' + kind;
+        wifiSettingsStatus.textContent = text;
+    }
+    function hideWifiStatus() {
+        wifiSettingsStatus.className = 'wifi-settings-status';
+        wifiSettingsStatus.textContent = '';
+    }
+
+    wifiSaveBtn.addEventListener('click', function () {
+        const ssid = wifiSsidInput.value.trim();
+        const pass = wifiPassInput.value;
+
+        if (!ssid) {
+            showWifiStatus('error', 'กรุณากรอกชื่อ WiFi (SSID)');
+            return;
+        }
+        if (!client.connected) {
+            showWifiStatus('error', 'ยังไม่ได้เชื่อมต่อกับเครื่อง ลองใหม่อีกครั้ง');
+            return;
+        }
+
+        wifiSaveBtn.disabled = true;
+        wifiSaveBtn.textContent = 'กำลังส่ง...';
+        showWifiStatus('sending', 'กำลังส่งค่า WiFi ใหม่ไปยังเครื่อง...');
+
+        client.publish(TOPIC_WIFI_CONFIG, JSON.stringify({ ssid: ssid, password: pass }));
+
+        // เผื่อไม่มี ack กลับมา (เช่น เครื่องหลุดเน็ตไปแล้วจริงๆ)
+        setTimeout(function () {
+            if (wifiSaveBtn.disabled) {
+                wifiSaveBtn.disabled = false;
+                wifiSaveBtn.textContent = 'เพิ่มเป็น WiFi สำรอง';
+                showWifiStatus('error', 'ไม่ได้รับการตอบกลับจากเครื่อง — เครื่องอาจไม่ได้ออนไลน์อยู่ในตอนนี้');
+            }
+        }, 8000);
+    });
+
+    /* ── ใหม่: ตั้งรอบเวลาการผสม (Auto Mix Timer) ── */
+    const mixOnMinInput    = document.getElementById('mixOnMinInput');
+    const mixOffMinInput   = document.getElementById('mixOffMinInput');
+    const autoTimerSaveBtn = document.getElementById('autoTimerSaveBtn');
+    const autoTimerStatus  = document.getElementById('autoTimerStatus');
+    const autoTimerCurrent = document.getElementById('autoTimerCurrent');
+
+    function showAutoTimerStatus(kind, text) {
+        autoTimerStatus.className = 'auto-timer-status show ' + kind;
+        autoTimerStatus.textContent = text;
+    }
+
+    function formatSec(sec) {
+        sec = Math.max(0, sec | 0);
+        const m = Math.floor(sec / 60);
+        const s = sec % 60;
+        return m + ':' + (s < 10 ? '0' : '') + s;
+    }
+
+    function renderAutoTimerInfo(info) {
+        // อัปเดตค่าในช่องกรอกเฉพาะตอนที่ผู้ใช้ไม่ได้กำลังพิมพ์อยู่ กันค่าที่พิมพ์ค้างโดนทับ
+        if (document.activeElement !== mixOnMinInput  && info.mix_on_min  !== undefined) mixOnMinInput.value  = info.mix_on_min;
+        if (document.activeElement !== mixOffMinInput && info.mix_off_min !== undefined) mixOffMinInput.value = info.mix_off_min;
+
+        const phase  = info.mix_state ? 'กำลังกลับกอง (ON)' : 'กำลังพัก (OFF)';
+        const remain = (info.remaining_sec !== undefined) ? formatSec(info.remaining_sec) : '--:--';
+        autoTimerCurrent.textContent =
+            'สถานะปัจจุบัน: ' + phase + ' • เหลืออีก ' + remain +
+            ' • รอบที่ตั้งไว้: เปิด ' + info.mix_on_min + ' นาที / พัก ' + info.mix_off_min + ' นาที';
+    }
+
+    autoTimerSaveBtn.addEventListener('click', function () {
+        const onMin  = parseInt(mixOnMinInput.value, 10);
+        const offMin = parseInt(mixOffMinInput.value, 10);
+
+        if (!onMin || !offMin || onMin < 1 || offMin < 1 || onMin > 720 || offMin > 720) {
+            showAutoTimerStatus('error', 'กรุณากรอกตัวเลข 1 - 720 นาที ให้ครบทั้งสองช่อง');
+            return;
+        }
+        if (!client.connected) {
+            showAutoTimerStatus('error', 'ยังไม่ได้เชื่อมต่อกับเครื่อง ลองใหม่อีกครั้ง');
+            return;
+        }
+
+        autoTimerSaveBtn.disabled = true;
+        autoTimerSaveBtn.textContent = 'กำลังบันทึก...';
+        showAutoTimerStatus('saving', 'กำลังส่งค่ารอบเวลาไปยังเครื่อง...');
+
+        client.publish(TOPIC_AUTO_TIMER_CONFIG, JSON.stringify({ mix_on_min: onMin, mix_off_min: offMin }));
+
+        // เผื่อไม่มี ack กลับมา
+        setTimeout(function () {
+            if (autoTimerSaveBtn.disabled) {
+                autoTimerSaveBtn.disabled = false;
+                autoTimerSaveBtn.textContent = 'บันทึกรอบเวลา';
+                showAutoTimerStatus('error', 'ไม่ได้รับการตอบกลับจากเครื่อง — เครื่องอาจไม่ได้ออนไลน์อยู่ในตอนนี้');
+            }
+        }, 8000);
+    });
+
+    /* ── States shared between Manual buttons and Auto status chips ── */
+    const states = { mix: false, solenoid: false, lid: 'down' };
+
+    function setMixState(val, userInitiated) {
+        states.mix = val;
+        const btn  = document.getElementById('btnMix');
+        const stEl = document.getElementById('stateMix');
+        if (val) { btn.classList.add('on');    stEl.innerHTML = '<span class="state-dot"></span>ON';  stEl.classList.remove('off'); }
+        else     { btn.classList.remove('on'); stEl.innerHTML = '<span class="state-dot"></span>OFF'; stEl.classList.add('off'); }
+        if (userInitiated) flashToggle(btn);
+        updateAutoChip('Mix', val);
+    }
+
+    function setSolenoidState(val, userInitiated) {
+        states.solenoid = val;
+        const btn  = document.getElementById('btnSolenoid');
+        const stEl = document.getElementById('stateSolenoid');
+        if (val) { btn.classList.add('on');    stEl.innerHTML = '<span class="state-dot"></span>ON';  stEl.classList.remove('off'); }
+        else     { btn.classList.remove('on'); stEl.innerHTML = '<span class="state-dot"></span>OFF'; stEl.classList.add('off'); }
+        if (userInitiated) flashToggle(btn);
+        updateAutoChip('Solenoid', val);
+    }
+
+    function updateAutoChip(name, active) {
+        const idMap = { Mix: 'autoChipMix', Solenoid: 'autoChipSolenoid' };
+        const chip  = document.getElementById(idMap[name]);
+        const stEl  = document.getElementById(idMap[name] + 'State');
+        if (!chip || !stEl) return;
+        chip.classList.toggle('active', !!active);
+        stEl.textContent = active ? 'Running' : 'Idle';
+    }
+
     const lidBadge = document.getElementById("lidBadge");
     let holdDir = null;
 
@@ -674,16 +1389,29 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    function setLidState(lid) {
+        states.lid = lid;
+
+        if (lid === 'moving_up' || lid === 'up_moving') {
+            lidBadge.textContent = "MOVING UP"; lidBadge.classList.add("open");
+        } else if (lid === 'moving_down' || lid === 'down_moving') {
+            lidBadge.textContent = "MOVING DOWN"; lidBadge.classList.remove("open");
+        } else if (lid === 'up') {
+            lidBadge.textContent = "UP"; lidBadge.classList.add("open");
+        } else {
+            lidBadge.textContent = "DOWN"; lidBadge.classList.remove("open");
+        }
+    }
+
     window.holdStart = function (dir) {
-        if (holdDir === dir) return;   // already holding this direction
-        // if opposite direction was held, release it first
+        if (holdDir === dir) return;
         if (holdDir && holdDir !== dir) holdEnd(holdDir);
 
         holdDir = dir;
         const btn = document.getElementById(dir === 'up' ? 'btnUp' : 'btnDown');
         btn.classList.add("holding");
         updateLidBadge(dir);
-        client.publish("esp32/control", JSON.stringify({ position: dir === 'up' ? 1 : 0 }));
+        client.publish(TOPIC_CONTROL, JSON.stringify({ position: dir === 'up' ? 1 : 0 }));
     };
 
     window.holdEnd = function (dir) {
@@ -692,11 +1420,77 @@ document.addEventListener("DOMContentLoaded", function () {
         const btn = document.getElementById(dir === 'up' ? 'btnUp' : 'btnDown');
         btn.classList.remove("holding");
         updateLidBadge(null);
-        /* position: -1 = STOP signal to ESP32 */
-        client.publish("esp32/control", JSON.stringify({ position: -1 }));
+        client.publish(TOPIC_CONTROL, JSON.stringify({ position: -1 }));
     };
 
-    /* Block context menu on long-press (mobile) */
+    /* ── Mode ── */
+    window.currentMode = 'manual';
+    window.setMode = function (mode) {
+        window.currentMode = mode;
+        const btnManual  = document.getElementById("btnManual");
+        const btnAuto    = document.getElementById("btnAuto");
+        const manualCtrl = document.getElementById("manualControls");
+        const autoBanner = document.getElementById("autoBanner");
+        if (mode === 'manual') {
+            btnManual.className = "mode-btn active-manual";
+            btnAuto.className   = "mode-btn";
+            manualCtrl.style.display = "grid";
+            autoBanner.classList.remove("visible");
+            client.publish(TOPIC_CONTROL, JSON.stringify({ mode: "manual" }));
+        } else {
+            btnAuto.className   = "mode-btn active-auto";
+            btnManual.className = "mode-btn";
+            manualCtrl.style.display = "none";
+            autoBanner.classList.add("visible");
+
+            setMixState(false, false);
+            setSolenoidState(false, false);
+            if (holdDir) holdEnd(holdDir);
+            updateLidBadge(null);
+
+            client.publish(TOPIC_CONTROL, JSON.stringify({ mode: "auto" }));
+        }
+    };
+
+    /* ── Ripple feedback on any ctrl-btn press ── */
+    function spawnRipple(btn, evt) {
+        const rect = btn.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        const clientX = (evt.touches && evt.touches[0]) ? evt.touches[0].clientX : evt.clientX;
+        const clientY = (evt.touches && evt.touches[0]) ? evt.touches[0].clientY : evt.clientY;
+        const x = (clientX !== undefined ? clientX - rect.left : rect.width / 2) - size / 2;
+        const y = (clientY !== undefined ? clientY - rect.top  : rect.height / 2) - size / 2;
+        const ripple = document.createElement('span');
+        ripple.className = 'ripple';
+        ripple.style.width  = size + 'px';
+        ripple.style.height = size + 'px';
+        ripple.style.left   = x + 'px';
+        ripple.style.top    = y + 'px';
+        btn.appendChild(ripple);
+        setTimeout(function () { ripple.remove(); }, 550);
+    }
+
+    function flashToggle(btn) {
+        btn.classList.remove('just-toggled');
+        void btn.offsetWidth;
+        btn.classList.add('just-toggled');
+        setTimeout(function () { btn.classList.remove('just-toggled'); }, 650);
+    }
+
+    /* ── Toggle (Mix / Solenoid), triggered by user click/tap ── */
+    window.toggleCtrl = function (name, evt) {
+        const btn = document.getElementById(name === 'mix' ? 'btnMix' : 'btnSolenoid');
+        if (evt) spawnRipple(btn, evt);
+
+        const newVal = !states[name];
+        if (name === 'mix')      setMixState(newVal, true);
+        if (name === 'solenoid') setSolenoidState(newVal, true);
+
+        const payload = {};
+        payload[name] = newVal ? 1 : 0;
+        client.publish(TOPIC_CONTROL, JSON.stringify(payload));
+    };
+
     document.querySelectorAll('.hold-btn').forEach(function (el) {
         el.addEventListener('contextmenu', function (e) { e.preventDefault(); });
     });
