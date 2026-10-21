@@ -296,10 +296,10 @@ body::before {
 .mode-btn.active-manual { background:var(--text-primary);color:white;box-shadow:var(--shadow-sm); }
 .mode-btn.active-auto   { background:linear-gradient(135deg,#6d28d9,#7c3aed);color:white;box-shadow:0 4px 12px rgba(124,58,237,.3); }
 
-/* ─── Manual Controls grid: position-card(2col) + mix + solenoid = 4 col ─── */
-.manual-controls { display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px; }
+/* ─── Manual Controls grid: position-card(2col) + mix + solenoid + airpump = 5 col ─── */
+.manual-controls { display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:14px; }
 
-/* ── Regular ctrl-btn (Mix / Solenoid) ── */
+/* ── Regular ctrl-btn (Mix / Solenoid / Air Pump) ── */
 .ctrl-btn {
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
     padding:24px 16px;border-radius:var(--radius-md);border:1.5px solid var(--border);
@@ -331,8 +331,14 @@ body::before {
     70%  { box-shadow:0 0 0 16px rgba(59,130,246,0); }
     100% { box-shadow:0 0 0 0 rgba(59,130,246,0); }
 }
+@keyframes pulse-ring-cyan {
+    0%   { box-shadow:0 0 0 0 rgba(6,182,212,.45); }
+    70%  { box-shadow:0 0 0 16px rgba(6,182,212,0); }
+    100% { box-shadow:0 0 0 0 rgba(6,182,212,0); }
+}
 .btn-mix.just-toggled      { animation: pulse-ring-green .6s ease-out; }
 .btn-solenoid.just-toggled { animation: pulse-ring-blue .6s ease-out; }
+.btn-airpump.just-toggled  { animation: pulse-ring-cyan .6s ease-out; }
 
 .btn-mix      { border-color:rgba(34,197,94,.25); }
 .btn-mix::before { background:linear-gradient(135deg,#f0fdf4,#dcfce7); }
@@ -344,11 +350,18 @@ body::before {
 .btn-solenoid:hover::before { opacity:1; }
 .btn-solenoid.on { background:linear-gradient(135deg,#dbeafe,#bfdbfe);border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.18); }
 
+.btn-airpump { border-color:rgba(6,182,212,.25); }
+.btn-airpump::before { background:linear-gradient(135deg,#ecfeff,#cffafe); }
+.btn-airpump:hover::before { opacity:1; }
+.btn-airpump.on { background:linear-gradient(135deg,#cffafe,#a5f3fc);border-color:#06b6d4;box-shadow:0 0 0 3px rgba(6,182,212,.18); }
+
 .ctrl-icon { width:44px;height:44px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;transition:background .2s,transform .2s; }
 .btn-mix .ctrl-icon         { background:rgba(34,197,94,.12); }
 .btn-mix.on .ctrl-icon      { background:var(--green); transform:scale(1.08); }
 .btn-solenoid .ctrl-icon    { background:rgba(59,130,246,.12); }
 .btn-solenoid.on .ctrl-icon { background:var(--blue); transform:scale(1.08); }
+.btn-airpump .ctrl-icon     { background:rgba(6,182,212,.12); }
+.btn-airpump.on .ctrl-icon  { background:#06b6d4; transform:scale(1.08); }
 .ctrl-icon svg { width:22px;height:22px;transition:stroke .2s; }
 .ctrl-btn .ctrl-icon svg    { stroke:var(--text-secondary);fill:none; }
 .ctrl-btn.on .ctrl-icon svg { stroke:white; }
@@ -357,6 +370,7 @@ body::before {
 .ctrl-state.off { background:var(--surface-alt);color:var(--text-muted);border:1px solid var(--border); }
 .btn-mix.on .ctrl-state      { background:var(--green);color:white;border:1px solid transparent; }
 .btn-solenoid.on .ctrl-state { background:var(--blue);color:white;border:1px solid transparent; }
+.btn-airpump.on .ctrl-state  { background:#06b6d4;color:white;border:1px solid transparent; }
 
 .state-dot { width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.5; }
 .ctrl-btn.on .state-dot { animation: blink-dot 1s infinite; }
@@ -476,7 +490,7 @@ body::before {
 .auto-text h3 { margin:0 0 4px;font-size:16px;font-weight:700;color:#5b21b6; }
 .auto-text p  { margin:0;font-size:13px;color:#7c3aed;opacity:.8; }
 
-.auto-status-grid { display:grid;grid-template-columns:repeat(2,1fr);gap:10px; }
+.auto-status-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:10px; }
 .auto-chip {
     display:flex;align-items:center;gap:10px;
     background:rgba(255,255,255,.65);border:1.5px solid rgba(124,58,237,.15);
@@ -505,7 +519,45 @@ body::before {
     color: var(--blue);
 }
 
-/* ─── Auto Mix Timer settings (ใหม่) — ตั้งรอบเวลาผสมได้เองจาก Dashboard เฉพาะโหมด Auto ─── */
+.auto-chip.chip-airpump.active {
+    border-color: rgba(6,182,212,.35);
+    box-shadow: 0 2px 10px rgba(6,182,212,.12);
+}
+.auto-chip.chip-airpump.active .chip-dot {
+    background: #06b6d4;
+    box-shadow: 0 0 0 4px rgba(6,182,212,.18);
+}
+.auto-chip.chip-airpump.active .chip-state {
+    color: #06b6d4;
+}
+
+/* ─── แผงเปิด/ปิดการทำงานอัตโนมัติรายอุปกรณ์ (ใช้ได้เฉพาะโหมด Auto) ─── */
+.auto-enable-panel {
+    padding: 18px 22px;
+    background: rgba(255,255,255,.65);
+    border: 1.5px solid rgba(124,58,237,.15);
+    border-radius: var(--radius-md);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.auto-enable-title { font-size:13px;font-weight:700;color:#5b21b6;margin-bottom:2px; }
+.auto-enable-row { display:flex;align-items:center;justify-content:space-between; }
+.auto-enable-label { font-size:13px;font-weight:600;color:var(--text-primary); }
+.auto-toggle { position:relative;display:inline-block;width:42px;height:24px;flex-shrink:0; }
+.auto-toggle input { opacity:0;width:0;height:0; }
+.auto-toggle-slider {
+    position:absolute;cursor:pointer;inset:0;
+    background:#cbd5e1;border-radius:999px;transition:.2s;
+}
+.auto-toggle-slider::before {
+    content:'';position:absolute;height:18px;width:18px;left:3px;bottom:3px;
+    background:white;border-radius:50%;transition:.2s;box-shadow:var(--shadow-sm);
+}
+.auto-toggle input:checked + .auto-toggle-slider { background:#7c3aed; }
+.auto-toggle input:checked + .auto-toggle-slider::before { transform:translateX(18px); }
+
+/* ─── Auto Mix Timer settings — ตั้งรอบเวลาผสมได้เองจาก Dashboard เฉพาะโหมด Auto ─── */
 .auto-timer-config {
     padding: 20px 22px;
     background: rgba(255,255,255,.65);
@@ -558,7 +610,7 @@ body::before {
     .big-value { font-size:60px; }
     .section-divider { padding:24px 28px 8px; }
     .control-container { padding:10px 28px 0; }
-    .manual-controls { grid-template-columns:1fr 1fr 1fr 1fr;gap:12px; }
+    .manual-controls { grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:12px; }
 }
 @media (max-width:767px) {
     .header { padding:28px 16px 18px; }
@@ -859,6 +911,18 @@ body::before {
                 <span class="ctrl-state off" id="stateSolenoid"><span class="state-dot"></span>OFF</span>
             </button>
 
+            <button class="ctrl-btn btn-airpump" id="btnAirpump" onclick="toggleCtrl('airpump', event)">
+                <div class="ctrl-icon">
+                    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2a5 5 0 00-5 5v3a5 5 0 0010 0V7a5 5 0 00-5-5z"/>
+                        <path d="M5 10a7 7 0 0014 0"/>
+                        <path d="M8 21h8M12 17v4"/>
+                    </svg>
+                </div>
+                <span class="ctrl-label">Air Pump</span>
+                <span class="ctrl-state off" id="stateAirpump"><span class="state-dot"></span>OFF</span>
+            </button>
+
         </div>
 
         <div class="auto-banner" id="autoBanner">
@@ -885,9 +949,42 @@ body::before {
                         <span class="chip-state" id="autoChipSolenoidState">Idle</span>
                     </div>
                 </div>
+                <div class="auto-chip chip-airpump" id="autoChipAirpump">
+                    <span class="chip-dot"></span>
+                    <div class="chip-text">
+                        <span class="chip-label">Air Pump</span>
+                        <span class="chip-state" id="autoChipAirpumpState">Idle</span>
+                    </div>
+                </div>
             </div>
 
-            <!-- ══ ตั้งรอบเวลาการผสม (ใหม่) — ใช้ได้เฉพาะโหมด Auto ══ -->
+            <!-- ══ เปิด/ปิดการทำงานอัตโนมัติรายอุปกรณ์ — ใช้ได้เฉพาะโหมด Auto ══ -->
+            <div class="auto-enable-panel" id="autoEnablePanel">
+                <div class="auto-enable-title">⚙️ เปิด/ปิดการทำงานอัตโนมัติรายอุปกรณ์</div>
+                <div class="auto-enable-row">
+                    <span class="auto-enable-label">Mix</span>
+                    <label class="auto-toggle">
+                        <input type="checkbox" id="enableMixToggle" checked>
+                        <span class="auto-toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="auto-enable-row">
+                    <span class="auto-enable-label">Solenoid (รดน้ำ)</span>
+                    <label class="auto-toggle">
+                        <input type="checkbox" id="enableSolenoidToggle" checked>
+                        <span class="auto-toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="auto-enable-row">
+                    <span class="auto-enable-label">Air Pump</span>
+                    <label class="auto-toggle">
+                        <input type="checkbox" id="enableAirpumpToggle" checked>
+                        <span class="auto-toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- ══ ตั้งรอบเวลาการผสม — ใช้ได้เฉพาะโหมด Auto ══ -->
             <div class="auto-timer-config" id="autoTimerConfig">
                 <div class="auto-timer-title">⏱️ ตั้งค่ารอบเวลาการกลับกอง (Auto)</div>
                 <div class="auto-timer-sub">กำหนดได้เอง — กลับกองกี่นาที แล้วพักกี่นาที (1 - 720 นาที)</div>
@@ -904,6 +1001,40 @@ body::before {
                 <button class="auto-timer-save-btn" id="autoTimerSaveBtn">บันทึกรอบเวลา</button>
                 <div class="auto-timer-status" id="autoTimerStatus"></div>
                 <div class="auto-timer-current" id="autoTimerCurrent">กำลังโหลดค่าปัจจุบันจากเครื่อง...</div>
+            </div>
+
+            <!-- ══ ตั้งค่า Setpoint ความชื้น (ค่าเดียว) — ใช้ได้เฉพาะโหมด Auto ══ -->
+            <div class="auto-timer-config" id="moistureSetpointConfig">
+                <div class="auto-timer-title">💧 ตั้งค่า Setpoint ความชื้น (Auto)</div>
+                <div class="auto-timer-sub">รดน้ำอัตโนมัติเมื่อความชื้นต่ำกว่าค่าที่ตั้ง และหยุดเมื่อความชื้นถึงค่าที่ตั้ง (0 - 100%)</div>
+                <div class="auto-timer-fields" style="grid-template-columns:1fr;">
+                    <div class="auto-timer-field">
+                        <label for="moisSetInput">ค่าความชื้นที่ต้องการ (%)</label>
+                        <input type="number" id="moisSetInput" min="0" max="100" step="1" placeholder="20">
+                    </div>
+                </div>
+                <button class="auto-timer-save-btn" id="moistureSaveBtn">บันทึก Setpoint ความชื้น</button>
+                <div class="auto-timer-status" id="moistureStatus"></div>
+                <div class="auto-timer-current" id="moistureCurrent">กำลังโหลดค่าปัจจุบันจากเครื่อง...</div>
+            </div>
+
+            <!-- ══ ตั้งรอบเวลา Air Pump — ใช้ได้เฉพาะโหมด Auto ══ -->
+            <div class="auto-timer-config" id="airpumpTimerConfig">
+                <div class="auto-timer-title">🌬️ ตั้งค่ารอบเวลา Air Pump (Auto)</div>
+                <div class="auto-timer-sub">กำหนดได้เอง — เปิดปั๊มลมกี่นาที แล้วพักกี่นาที (1 - 720 นาที)</div>
+                <div class="auto-timer-fields">
+                    <div class="auto-timer-field">
+                        <label for="airOnMinInput">เปิดปั๊มลม (นาที)</label>
+                        <input type="number" id="airOnMinInput" min="1" max="720" step="1" placeholder="5">
+                    </div>
+                    <div class="auto-timer-field">
+                        <label for="airOffMinInput">พัก (นาที)</label>
+                        <input type="number" id="airOffMinInput" min="1" max="720" step="1" placeholder="25">
+                    </div>
+                </div>
+                <button class="auto-timer-save-btn" id="airpumpTimerSaveBtn">บันทึกรอบเวลา Air Pump</button>
+                <div class="auto-timer-status" id="airpumpTimerStatus"></div>
+                <div class="auto-timer-current" id="airpumpTimerCurrent">กำลังโหลดค่าปัจจุบันจากเครื่อง...</div>
             </div>
         </div>
 
@@ -925,21 +1056,35 @@ document.addEventListener("DOMContentLoaded", function () {
     const phEl      = document.getElementById("ph");
     const phBarEl   = document.getElementById("phBar");
 
-    const TOPIC_SENSOR       = "esp32/mek_soil_001";
-    const TOPIC_STATUS       = "esp32/status";
-    const TOPIC_CONTROL      = "esp32/control";
-    const TOPIC_WIFI_CONFIG  = "esp32/wifi_config";      
-    const TOPIC_WIFI_ACK     = "esp32/wifi_config_ack";  
-    const TOPIC_WIFI_SCAN_REQ = "esp32/wifi_scan_request";
-    const TOPIC_WIFI_SCAN_RES = "esp32/wifi_scan_result"; 
-    const TOPIC_WIFI_INFO     = "esp32/wifi_info";        
-    const TOPIC_WIFI_RESET_REQ = "esp32/wifi_reset_request";
-    const TOPIC_WIFI_SAVED_LIST = "esp32/wifi_saved_list";  
+    const TOPIC_SENSOR       = "ieaocm/php2ueuh/IEAOCM_sensor";
+    const TOPIC_STATUS       = "ieaocm/php2ueuh/status";
+    const TOPIC_CONTROL      = "ieaocm/php2ueuh/control";
+    const TOPIC_WIFI_CONFIG  = "ieaocm/php2ueuh/wifi_config";      
+    const TOPIC_WIFI_ACK     = "ieaocm/php2ueuh/wifi_config_ack";  
+    const TOPIC_WIFI_SCAN_REQ = "ieaocm/php2ueuh/wifi_scan_request";
+    const TOPIC_WIFI_SCAN_RES = "ieaocm/php2ueuh/wifi_scan_result"; 
+    const TOPIC_WIFI_INFO     = "ieaocm/php2ueuh/wifi_info";        
+    const TOPIC_WIFI_RESET_REQ = "ieaocm/php2ueuh/wifi_reset_request";
+    const TOPIC_WIFI_SAVED_LIST = "ieaocm/php2ueuh/wifi_saved_list";  
 
-    // ── ใหม่: หัวข้อ MQTT สำหรับตั้งรอบเวลาผสม (Auto) จาก Dashboard ──
-    const TOPIC_AUTO_TIMER_CONFIG = "esp32/auto_timer_config"; // Dashboard -> ESP32
-    const TOPIC_AUTO_TIMER_ACK    = "esp32/auto_timer_ack";    // ESP32 -> Dashboard (ยืนยัน)
-    const TOPIC_AUTO_TIMER_INFO   = "esp32/auto_timer_info";   // ESP32 -> Dashboard (ค่าปัจจุบัน + นับถอยหลัง)
+    // ── หัวข้อ MQTT สำหรับตั้งรอบเวลาผสม (Auto) จาก Dashboard ──
+    const TOPIC_AUTO_TIMER_CONFIG = "ieaocm/php2ueuh/auto_timer_config"; // Dashboard -> ESP32
+    const TOPIC_AUTO_TIMER_ACK    = "ieaocm/php2ueuh/auto_timer_ack";    // ESP32 -> Dashboard (ยืนยัน)
+    const TOPIC_AUTO_TIMER_INFO   = "ieaocm/php2ueuh/auto_timer_info";   // ESP32 -> Dashboard (ค่าปัจจุบัน + นับถอยหลัง)
+
+    // ── หัวข้อ MQTT สำหรับตั้ง Setpoint ความชื้น (Auto) จาก Dashboard ──
+    const TOPIC_MOISTURE_CONFIG = "ieaocm/php2ueuh/moisture_setpoint_config"; // Dashboard -> ESP32
+    const TOPIC_MOISTURE_ACK    = "ieaocm/php2ueuh/moisture_setpoint_ack";    // ESP32 -> Dashboard (ยืนยัน)
+    const TOPIC_MOISTURE_INFO   = "ieaocm/php2ueuh/moisture_setpoint_info";   // ESP32 -> Dashboard (ค่าปัจจุบัน)
+
+    // ── หัวข้อ MQTT สำหรับรอบเวลา Air Pump (Auto) จาก Dashboard ──
+    const TOPIC_AIRPUMP_TIMER_CONFIG = "ieaocm/php2ueuh/airpump_timer_config"; // Dashboard -> ESP32
+    const TOPIC_AIRPUMP_TIMER_ACK    = "ieaocm/php2ueuh/airpump_timer_ack";    // ESP32 -> Dashboard (ยืนยัน)
+    const TOPIC_AIRPUMP_TIMER_INFO   = "ieaocm/php2ueuh/airpump_timer_info";   // ESP32 -> Dashboard (ค่าปัจจุบัน)
+
+    // ── หัวข้อ MQTT สำหรับเปิด/ปิดการทำงานอัตโนมัติรายอุปกรณ์ จาก Dashboard ──
+    const TOPIC_AUTO_ENABLE_CONFIG = "ieaocm/php2ueuh/auto_enable_config"; // Dashboard -> ESP32
+    const TOPIC_AUTO_ENABLE_INFO   = "ieaocm/php2ueuh/auto_enable_info";   // ESP32 -> Dashboard (ค่าปัจจุบัน)
 
     const client = mqtt.connect('wss://broker.hivemq.com:8884/mqtt', {
         reconnectPeriod: 2000,
@@ -975,8 +1120,13 @@ document.addEventListener("DOMContentLoaded", function () {
         client.subscribe(TOPIC_WIFI_SCAN_RES); 
         client.subscribe(TOPIC_WIFI_INFO);     
         client.subscribe(TOPIC_WIFI_SAVED_LIST);
-        client.subscribe(TOPIC_AUTO_TIMER_ACK);   // ใหม่
-        client.subscribe(TOPIC_AUTO_TIMER_INFO);  // ใหม่
+        client.subscribe(TOPIC_AUTO_TIMER_ACK);
+        client.subscribe(TOPIC_AUTO_TIMER_INFO);
+        client.subscribe(TOPIC_MOISTURE_ACK);
+        client.subscribe(TOPIC_MOISTURE_INFO);
+        client.subscribe(TOPIC_AIRPUMP_TIMER_ACK);
+        client.subscribe(TOPIC_AIRPUMP_TIMER_INFO);
+        client.subscribe(TOPIC_AUTO_ENABLE_INFO);
         offlineTimer = setTimeout(function () { statusReady = true; }, 4000);
     });
 
@@ -1033,7 +1183,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        // ── ใหม่: ผลบันทึกรอบเวลา Auto Mix ──
+        // ── ผลบันทึกรอบเวลา Auto Mix ──
         if (topic === TOPIC_AUTO_TIMER_ACK) {
             try {
                 const ack = JSON.parse(message.toString());
@@ -1048,7 +1198,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        // ── ใหม่: ค่ารอบเวลาปัจจุบัน + นับถอยหลังของ Auto Mix ──
+        // ── ค่ารอบเวลาปัจจุบัน + นับถอยหลังของ Auto Mix ──
         if (topic === TOPIC_AUTO_TIMER_INFO) {
             try {
                 const info = JSON.parse(message.toString());
@@ -1057,21 +1207,77 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
+        // ── ผลบันทึก Setpoint ความชื้น ──
+        if (topic === TOPIC_MOISTURE_ACK) {
+            try {
+                const ack = JSON.parse(message.toString());
+                if (ack.status === 'saved') {
+                    showMoistureStatus('saved', '✅ บันทึก Setpoint แล้ว: รดน้ำเมื่อความชื้นต่ำกว่า ' + ack.mois_set + '%');
+                } else {
+                    showMoistureStatus('error', '⚠️ ' + (ack.message || 'บันทึกไม่สำเร็จ'));
+                }
+                moistureSaveBtn.disabled = false;
+                moistureSaveBtn.textContent = 'บันทึก Setpoint ความชื้น';
+            } catch (e) {}
+            return;
+        }
+
+        // ── ค่า Setpoint ความชื้นปัจจุบัน ──
+        if (topic === TOPIC_MOISTURE_INFO) {
+            try {
+                const info = JSON.parse(message.toString());
+                renderMoistureInfo(info);
+            } catch (e) {}
+            return;
+        }
+
+        // ── ผลบันทึกรอบเวลา Air Pump ──
+        if (topic === TOPIC_AIRPUMP_TIMER_ACK) {
+            try {
+                const ack = JSON.parse(message.toString());
+                if (ack.status === 'saved') {
+                    showAirpumpTimerStatus('saved', '✅ บันทึกรอบเวลาแล้ว: เปิด ' + ack.air_on_min + ' นาที / พัก ' + ack.air_off_min + ' นาที');
+                } else {
+                    showAirpumpTimerStatus('error', '⚠️ ' + (ack.message || 'บันทึกไม่สำเร็จ'));
+                }
+                airpumpTimerSaveBtn.disabled = false;
+                airpumpTimerSaveBtn.textContent = 'บันทึกรอบเวลา Air Pump';
+            } catch (e) {}
+            return;
+        }
+
+        // ── ค่ารอบเวลาปัจจุบัน + นับถอยหลังของ Air Pump ──
+        if (topic === TOPIC_AIRPUMP_TIMER_INFO) {
+            try {
+                const info = JSON.parse(message.toString());
+                renderAirpumpTimerInfo(info);
+            } catch (e) {}
+            return;
+        }
+
+        // ── สถานะเปิด/ปิดการทำงานอัตโนมัติรายอุปกรณ์ ──
+        if (topic === TOPIC_AUTO_ENABLE_INFO) {
+            try {
+                const info = JSON.parse(message.toString());
+                renderAutoEnableInfo(info);
+            } catch (e) {}
+            return;
+        }
+
         try {
             const data = JSON.parse(message.toString());
             lastMessageTime = Date.now();
 
-            // [แก้ปัญหา #3] บังคับทศนิยม 1 ตำแหน่งฝั่ง dashboard เป็นตัวกันสองชั้น
-            // เผื่อค่าที่ยิงมายังไม่ผ่านการ format จากฝั่ง ESP32
+            
             if (data.mois !== undefined) {
                 const v = Math.min(Math.max(Math.round(Number(data.mois)), 0), 100);
                 moisEl.textContent = v;
                 moisBarEl.style.width = v + "%";
             }
             if (data.temp !== undefined) {
-                const v = Number(data.temp).toFixed(1);
-                tempEl.textContent = v;
-                tempBarEl.style.width = Math.min(Math.max(v, 0), 100) + "%";
+            const v = Math.round(Number(data.temp));
+            tempEl.textContent = v;
+            tempBarEl.style.width = Math.min(Math.max(v, 0), 100) + "%";
             }
             if (data.ph !== undefined) {
                 const v = Number(data.ph).toFixed(1);
@@ -1081,6 +1287,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (data.mix      !== undefined) setMixState(!!data.mix, false);
             if (data.solenoid !== undefined) setSolenoidState(!!data.solenoid, false);
+            if (data.airpump  !== undefined) setAirpumpState(!!data.airpump, false);
             if (data.lid      !== undefined) setLidState(data.lid);
 
             statusReady = true;
@@ -1281,7 +1488,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }, 8000);
     });
 
-    /* ── ใหม่: ตั้งรอบเวลาการผสม (Auto Mix Timer) ── */
+    /* ── ตั้งรอบเวลาการผสม (Auto Mix Timer) ── */
     const mixOnMinInput    = document.getElementById('mixOnMinInput');
     const mixOffMinInput   = document.getElementById('mixOffMinInput');
     const autoTimerSaveBtn = document.getElementById('autoTimerSaveBtn');
@@ -1341,8 +1548,135 @@ document.addEventListener("DOMContentLoaded", function () {
         }, 8000);
     });
 
+    /* ── ตั้งค่า Setpoint ความชื้น (ค่าเดียว) ── */
+    const moisSetInput    = document.getElementById('moisSetInput');
+    const moistureSaveBtn = document.getElementById('moistureSaveBtn');
+    const moistureStatus  = document.getElementById('moistureStatus');
+    const moistureCurrent = document.getElementById('moistureCurrent');
+
+    function showMoistureStatus(kind, text) {
+        moistureStatus.className = 'auto-timer-status show ' + kind;
+        moistureStatus.textContent = text;
+    }
+
+    function renderMoistureInfo(info) {
+        // อัปเดตช่องกรอกเฉพาะตอนที่ผู้ใช้ไม่ได้กำลังพิมพ์อยู่
+        if (document.activeElement !== moisSetInput && info.mois_set !== undefined) {
+            moisSetInput.value = info.mois_set;
+        }
+        moistureCurrent.textContent =
+            'Setpoint ปัจจุบัน: ' + info.mois_set + '% • ต่ำกว่านี้รดน้ำ (Solenoid ON) / ถึงหรือสูงกว่านี้หยุด (Solenoid OFF)';
+    }
+
+    moistureSaveBtn.addEventListener('click', function () {
+        const setVal = parseInt(moisSetInput.value, 10);
+
+        if (isNaN(setVal) || setVal < 0 || setVal > 100) {
+            showMoistureStatus('error', 'กรุณากรอกค่า 0 - 100%');
+            return;
+        }
+        if (!client.connected) {
+            showMoistureStatus('error', 'ยังไม่ได้เชื่อมต่อกับเครื่อง ลองใหม่อีกครั้ง');
+            return;
+        }
+
+        moistureSaveBtn.disabled = true;
+        moistureSaveBtn.textContent = 'กำลังบันทึก...';
+        showMoistureStatus('saving', 'กำลังส่งค่า Setpoint ไปยังเครื่อง...');
+
+        client.publish(TOPIC_MOISTURE_CONFIG, JSON.stringify({ mois_set: setVal }));
+
+        // เผื่อไม่มี ack กลับมา
+        setTimeout(function () {
+            if (moistureSaveBtn.disabled) {
+                moistureSaveBtn.disabled = false;
+                moistureSaveBtn.textContent = 'บันทึก Setpoint ความชื้น';
+                showMoistureStatus('error', 'ไม่ได้รับการตอบกลับจากเครื่อง — เครื่องอาจไม่ได้ออนไลน์อยู่ในตอนนี้');
+            }
+        }, 8000);
+    });
+
+    /* ── ตั้งรอบเวลา Air Pump (Auto) ── */
+    const airOnMinInput       = document.getElementById('airOnMinInput');
+    const airOffMinInput      = document.getElementById('airOffMinInput');
+    const airpumpTimerSaveBtn = document.getElementById('airpumpTimerSaveBtn');
+    const airpumpTimerStatus  = document.getElementById('airpumpTimerStatus');
+    const airpumpTimerCurrent = document.getElementById('airpumpTimerCurrent');
+
+    function showAirpumpTimerStatus(kind, text) {
+        airpumpTimerStatus.className = 'auto-timer-status show ' + kind;
+        airpumpTimerStatus.textContent = text;
+    }
+
+    function renderAirpumpTimerInfo(info) {
+        if (document.activeElement !== airOnMinInput  && info.air_on_min  !== undefined) airOnMinInput.value  = info.air_on_min;
+        if (document.activeElement !== airOffMinInput && info.air_off_min !== undefined) airOffMinInput.value = info.air_off_min;
+
+        const phase  = info.airpump_state ? 'กำลังเปิดปั๊มลม (ON)' : 'กำลังพัก (OFF)';
+        const remain = (info.remaining_sec !== undefined) ? formatSec(info.remaining_sec) : '--:--';
+        airpumpTimerCurrent.textContent =
+            'สถานะปัจจุบัน: ' + phase + ' • เหลืออีก ' + remain +
+            ' • รอบที่ตั้งไว้: เปิด ' + info.air_on_min + ' นาที / พัก ' + info.air_off_min + ' นาที';
+    }
+
+    airpumpTimerSaveBtn.addEventListener('click', function () {
+        const onMin  = parseInt(airOnMinInput.value, 10);
+        const offMin = parseInt(airOffMinInput.value, 10);
+
+        if (!onMin || !offMin || onMin < 1 || offMin < 1 || onMin > 720 || offMin > 720) {
+            showAirpumpTimerStatus('error', 'กรุณากรอกตัวเลข 1 - 720 นาที ให้ครบทั้งสองช่อง');
+            return;
+        }
+        if (!client.connected) {
+            showAirpumpTimerStatus('error', 'ยังไม่ได้เชื่อมต่อกับเครื่อง ลองใหม่อีกครั้ง');
+            return;
+        }
+
+        airpumpTimerSaveBtn.disabled = true;
+        airpumpTimerSaveBtn.textContent = 'กำลังบันทึก...';
+        showAirpumpTimerStatus('saving', 'กำลังส่งค่ารอบเวลาไปยังเครื่อง...');
+
+        client.publish(TOPIC_AIRPUMP_TIMER_CONFIG, JSON.stringify({ air_on_min: onMin, air_off_min: offMin }));
+
+        setTimeout(function () {
+            if (airpumpTimerSaveBtn.disabled) {
+                airpumpTimerSaveBtn.disabled = false;
+                airpumpTimerSaveBtn.textContent = 'บันทึกรอบเวลา Air Pump';
+                showAirpumpTimerStatus('error', 'ไม่ได้รับการตอบกลับจากเครื่อง — เครื่องอาจไม่ได้ออนไลน์อยู่ในตอนนี้');
+            }
+        }, 8000);
+    });
+
+    /* ── เปิด/ปิดการทำงานอัตโนมัติรายอุปกรณ์ (ใช้ได้เฉพาะโหมด Auto) ── */
+    const enableMixToggle      = document.getElementById('enableMixToggle');
+    const enableSolenoidToggle = document.getElementById('enableSolenoidToggle');
+    const enableAirpumpToggle  = document.getElementById('enableAirpumpToggle');
+
+    function publishAutoEnable(key, val) {
+        if (!client.connected) return;
+        const payload = {};
+        payload[key] = val ? 1 : 0;
+        client.publish(TOPIC_AUTO_ENABLE_CONFIG, JSON.stringify(payload));
+    }
+
+    enableMixToggle.addEventListener('change', function () {
+        publishAutoEnable('mix_enable', enableMixToggle.checked);
+    });
+    enableSolenoidToggle.addEventListener('change', function () {
+        publishAutoEnable('solenoid_enable', enableSolenoidToggle.checked);
+    });
+    enableAirpumpToggle.addEventListener('change', function () {
+        publishAutoEnable('airpump_enable', enableAirpumpToggle.checked);
+    });
+
+    function renderAutoEnableInfo(info) {
+        if (info.mix_enable      !== undefined) enableMixToggle.checked      = !!info.mix_enable;
+        if (info.solenoid_enable !== undefined) enableSolenoidToggle.checked = !!info.solenoid_enable;
+        if (info.airpump_enable  !== undefined) enableAirpumpToggle.checked  = !!info.airpump_enable;
+    }
+
     /* ── States shared between Manual buttons and Auto status chips ── */
-    const states = { mix: false, solenoid: false, lid: 'down' };
+    const states = { mix: false, solenoid: false, airpump: false, lid: 'down' };
 
     function setMixState(val, userInitiated) {
         states.mix = val;
@@ -1364,8 +1698,19 @@ document.addEventListener("DOMContentLoaded", function () {
         updateAutoChip('Solenoid', val);
     }
 
+    /* ── Air Pump — มีทำงานอัตโนมัติได้ จึงมี auto chip ด้วย ── */
+    function setAirpumpState(val, userInitiated) {
+        states.airpump = val;
+        const btn  = document.getElementById('btnAirpump');
+        const stEl = document.getElementById('stateAirpump');
+        if (val) { btn.classList.add('on');    stEl.innerHTML = '<span class="state-dot"></span>ON';  stEl.classList.remove('off'); }
+        else     { btn.classList.remove('on'); stEl.innerHTML = '<span class="state-dot"></span>OFF'; stEl.classList.add('off'); }
+        if (userInitiated) flashToggle(btn);
+        updateAutoChip('Airpump', val);
+    }
+
     function updateAutoChip(name, active) {
-        const idMap = { Mix: 'autoChipMix', Solenoid: 'autoChipSolenoid' };
+        const idMap = { Mix: 'autoChipMix', Solenoid: 'autoChipSolenoid', Airpump: 'autoChipAirpump' };
         const chip  = document.getElementById(idMap[name]);
         const stEl  = document.getElementById(idMap[name] + 'State');
         if (!chip || !stEl) return;
@@ -1445,6 +1790,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             setMixState(false, false);
             setSolenoidState(false, false);
+            setAirpumpState(false, false);
             if (holdDir) holdEnd(holdDir);
             updateLidBadge(null);
 
@@ -1477,14 +1823,16 @@ document.addEventListener("DOMContentLoaded", function () {
         setTimeout(function () { btn.classList.remove('just-toggled'); }, 650);
     }
 
-    /* ── Toggle (Mix / Solenoid), triggered by user click/tap ── */
+    /* ── Toggle (Mix / Solenoid / Air Pump), triggered by user click/tap ── */
     window.toggleCtrl = function (name, evt) {
-        const btn = document.getElementById(name === 'mix' ? 'btnMix' : 'btnSolenoid');
+        const btnIdMap = { mix: 'btnMix', solenoid: 'btnSolenoid', airpump: 'btnAirpump' };
+        const btn = document.getElementById(btnIdMap[name]);
         if (evt) spawnRipple(btn, evt);
 
         const newVal = !states[name];
         if (name === 'mix')      setMixState(newVal, true);
         if (name === 'solenoid') setSolenoidState(newVal, true);
+        if (name === 'airpump')  setAirpumpState(newVal, true);
 
         const payload = {};
         payload[name] = newVal ? 1 : 0;
